@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import SearchInterface from '../components/SearchInterface';
-import SearchResults from '../components/SearchResults';
-import StudyBrowser from '../components/StudyBrowser';
+import dynamic from 'next/dynamic';
 import { SearchResult } from '../lib/api';
+
+// Dynamically import components to prevent SSR hydration issues
+const SearchInterface = dynamic(() => import('../components/SearchInterface'), { ssr: false });
+const SearchResults = dynamic(() => import('../components/SearchResults'), { ssr: false });
+const StudyBrowser = dynamic(() => import('../components/StudyBrowser'), { ssr: false });
 
 export default function Home() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -36,7 +39,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" suppressHydrationWarning>
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
