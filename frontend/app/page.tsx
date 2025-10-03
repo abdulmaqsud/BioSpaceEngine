@@ -1,111 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
-import { SearchResult } from '../lib/api';
-
-// Dynamically import components to prevent SSR hydration issues
-const SearchInterface = dynamic(() => import('../components/SearchInterface'), { ssr: false });
-const SearchResults = dynamic(() => import('../components/SearchResults'), { ssr: false });
-const StudyBrowser = dynamic(() => import('../components/StudyBrowser'), { ssr: false });
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'search' | 'browse'>('search');
-  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const handleSearchResults = (results: SearchResult[]) => {
-    setSearchResults(results);
-  };
-
-  const handleLoading = (isLoading: boolean) => {
-    setLoading(isLoading);
-  };
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading BioSpace Knowledge Engine...</p>
-        </div>
-      </div>
-    );
-  }
+    // Redirect to explore page
+    router.push('/explore');
+  }, [router]);
 
   return (
-    <div className="min-h-screen bg-gray-50" suppressHydrationWarning>
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">
-                🚀 BioSpace Knowledge Engine
-              </h1>
-              <span className="ml-3 text-sm text-gray-500">
-                572 NASA Space Biology Studies
-              </span>
-            </div>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setActiveTab('search')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  activeTab === 'search'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                🔍 AI Search
-              </button>
-              <button
-                onClick={() => setActiveTab('browse')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  activeTab === 'browse'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                📚 Browse Studies
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="py-8">
-        {activeTab === 'search' ? (
-          <div>
-            <SearchInterface
-              onSearchResults={handleSearchResults}
-              onLoading={handleLoading}
-            />
-            <SearchResults results={searchResults} loading={loading} />
-          </div>
-        ) : (
-          <StudyBrowser />
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-white border-t mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-gray-600">
-            <p className="mb-2">
-              <strong>BioSpace Knowledge Engine</strong> - AI-powered exploration of NASA Space Biology research
-            </p>
-            <p className="text-sm">
-              Powered by Django REST API, Next.js, and FAISS vector search
-            </p>
-          </div>
-        </div>
-      </footer>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading BioSpace Knowledge Engine...</p>
+      </div>
     </div>
   );
 }
