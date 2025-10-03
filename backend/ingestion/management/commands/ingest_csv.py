@@ -1,8 +1,9 @@
-import csv
+from pathlib import Path
 import requests
 import time
 from django.core.management.base import BaseCommand, CommandError
 from ingestion.models import Study
+from ingestion.utils.csv_loader import parse_publications_csv
 
 
 class Command(BaseCommand):
@@ -14,6 +15,12 @@ class Command(BaseCommand):
             type=str,
             default='https://raw.githubusercontent.com/jgalazka/SB_publications/main/SB_publication_PMC.csv',
             help='URL to the CSV file'
+        )
+        parser.add_argument(
+            '--csv-path',
+            type=str,
+            default=None,
+            help='Path to a local CSV file (overrides --csv-url if provided)'
         )
         parser.add_argument(
             '--limit',
@@ -29,100 +36,75 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         csv_url = options['csv_url']
+        csv_path = options['csv_path']
         limit = options['limit']
         dry_run = options['dry_run']
         
-        self.stdout.write(f"Fetching CSV from: {csv_url}")
+        csv_content = self._load_csv(csv_path, csv_url)
+
+        studies_created = 0
+        studies_updated = 0
+        studies_unchanged = 0
+        valid_records = 0
         
+        for idx, record in enumerate(parse_publications_csv(csv_content), start=1):
+            if limit and idx > limit:
+                break
+            valid_records += 1
+            
+            if dry_run:
+                self.stdout.write(f"Would process: {record.title[:100]}... ({record.pmcid})")
+                continue
+            
+            study = Study.objects.filter(pmcid=record.pmcid).first()
+            if study is None:
+                Study.objects.create(pmcid=record.pmcid, **record.as_defaults())
+                studies_created += 1
+                self.stdout.write(f"Created: {record.title[:100]}... ({record.pmcid})")
+            else:
+                changed = False
+                for field, value in record.as_defaults().items():
+                    if getattr(study, field) != value:
+                        setattr(study, field, value)
+                        changed = True
+                if changed:
+                    study.save(update_fields=list(record.as_defaults().keys()))
+                    studies_updated += 1
+                    self.stdout.write(f"Updated: {record.title[:100]}... ({record.pmcid})")
+                else:
+                    studies_unchanged += 1
+                    self.stdout.write(f"Unchanged: {record.title[:100]}... ({record.pmcid})")
+            
+            # Rate limiting to be gentle with future metadata calls (placeholder)
+            if not dry_run:
+                time.sleep(0.05)
+        
+        if dry_run:
+            summary = (
+                f"Dry run complete: {valid_records} valid records inspected"
+            )
+        else:
+            summary = (
+                f"Processed {valid_records} records: "
+                f"created {studies_created}, updated {studies_updated}, "
+                f"unchanged {studies_unchanged}"
+            )
+        
+        self.stdout.write(self.style.SUCCESS(summary))
+    
+    def _load_csv(self, csv_path: str | None, csv_url: str) -> str:
+        """Return CSV content from a local file or remote URL."""
+        if csv_path:
+            path_obj = Path(csv_path)
+            if not path_obj.exists():
+                raise CommandError(f"CSV path does not exist: {csv_path}")
+            self.stdout.write(f"Loading CSV from local file: {path_obj}")
+            return path_obj.read_text(encoding='utf-8')
+        
+        self.stdout.write(f"Fetching CSV from: {csv_url}")
         try:
             response = requests.get(csv_url, timeout=30)
             response.raise_for_status()
-        except requests.RequestException as e:
-            raise CommandError(f"Failed to fetch CSV: {e}")
-        
-        # Parse CSV content (handle BOM)
-        csv_content = response.text
-        if csv_content.startswith('\ufeff'):
-            csv_content = csv_content[1:]  # Remove BOM
-        
-        reader = csv.DictReader(csv_content.splitlines())
-        
-        # Debug: print fieldnames
-        self.stdout.write(f"CSV fieldnames: {reader.fieldnames}")
-        
-        studies_processed = 0
-        studies_created = 0
-        studies_skipped = 0
-        
-        for row in reader:
-            if limit and studies_processed >= limit:
-                break
-                
-            studies_processed += 1
-            
-            title = row.get('Title', '').strip()
-            pmc_url = row.get('Link', '').strip()
-            
-            if not title or not pmc_url:
-                self.stdout.write(
-                    self.style.WARNING(f"Skipping row {studies_processed}: missing title or URL")
-                )
-                studies_skipped += 1
-                continue
-            
-            # Extract PMCID from URL
-            pmcid = self.extract_pmcid(pmc_url)
-            if not pmcid:
-                self.stdout.write(
-                    self.style.WARNING(f"Skipping row {studies_processed}: invalid PMC URL: {pmc_url}")
-                )
-                studies_skipped += 1
-                continue
-            
-            if dry_run:
-                self.stdout.write(f"Would process: {title[:100]}... ({pmcid})")
-                studies_created += 1
-                continue
-            
-            # Create or update study
-            study, created = Study.objects.get_or_create(
-                pmcid=pmcid,
-                defaults={
-                    'title': title,
-                    'pmc_url': pmc_url,
-                }
-            )
-            
-            if created:
-                studies_created += 1
-                self.stdout.write(f"Created: {title[:100]}... ({pmcid})")
-            else:
-                self.stdout.write(f"Already exists: {title[:100]}... ({pmcid})")
-            
-            # Rate limiting
-            time.sleep(0.1)
-        
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Processed {studies_processed} studies, "
-                f"created {studies_created}, "
-                f"skipped {studies_skipped}"
-            )
-        )
-    
-    def extract_pmcid(self, url):
-        """Extract PMCID from PMC URL"""
-        try:
-            # Handle different PMC URL formats
-            if 'pmc/articles/PMC' in url:
-                # Format: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC123456/
-                parts = url.split('PMC')
-                if len(parts) > 1:
-                    pmcid = 'PMC' + parts[1].split('/')[0]
-                    return pmcid
-            elif url.startswith('PMC'):
-                # Direct PMCID
-                return url.split('/')[0]
-        except Exception:
-            pass
-        return None
+        except requests.RequestException as exc:
+            raise CommandError(f"Failed to fetch CSV: {exc}") from exc
+        return response.text

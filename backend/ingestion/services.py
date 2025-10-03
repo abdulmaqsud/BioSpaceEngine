@@ -1,8 +1,15 @@
 import json
-import numpy as np
-import faiss
-from sentence_transformers import SentenceTransformer
-from django.conf import settings
+
+try:
+    import faiss  # type: ignore
+except ImportError:  # pragma: no cover - optional dependency
+    faiss = None
+
+try:
+    from sentence_transformers import SentenceTransformer  # type: ignore
+except ImportError:  # pragma: no cover - optional dependency
+    SentenceTransformer = None
+
 from .models import SearchIndex, EvidenceSentence
 
 
@@ -19,6 +26,8 @@ class SemanticSearchService:
     def _load_model(self):
         """Load sentence transformer model"""
         if self.model is None:
+            if SentenceTransformer is None:
+                return
             self.model = SentenceTransformer('all-MiniLM-L6-v2')
     
     def _load_index(self):
@@ -29,6 +38,8 @@ class SemanticSearchService:
                 return
             
             # Load FAISS index
+            if faiss is None:
+                return
             self.index = faiss.read_index(search_index.index_path)
             
             # Load metadata
@@ -52,7 +63,7 @@ class SemanticSearchService:
         Returns:
             List of search results with similarity scores
         """
-        if not self.index or not self.metadata:
+        if not self.index or not self.metadata or self.model is None:
             return []
         
         # Encode query

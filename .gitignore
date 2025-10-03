@@ -59,7 +59,6 @@ dist-ssr/
 Thumbs.db
 
 # Project specific
-data/
 *.faiss
 *.pkl
 *.pickle
