@@ -1,6 +1,7 @@
 {
-  "name": "frontend",
+  "name": "biospace-frontend",
   "version": "0.1.0",
+  "description": "Frontend interface for BioSpace Space Biology Knowledge Engine",
   "private": true,
   "scripts": {
     "dev": "next dev",
