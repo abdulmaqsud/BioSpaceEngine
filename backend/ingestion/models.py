@@ -51,7 +51,7 @@ class Section(models.Model):
 class EvidenceSentence(models.Model):
     """Individual sentences from Results sections for evidence extraction"""
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='evidence_sentences')
-    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='sentences')
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='sentences', null=True, blank=True)
     sentence_text = models.TextField()
     sentence_index = models.IntegerField()  # Position within section
     char_start = models.IntegerField()

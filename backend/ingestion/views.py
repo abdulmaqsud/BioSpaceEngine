@@ -8,6 +8,7 @@ from .serializers import (
     StudySerializer, SectionSerializer, EvidenceSentenceSerializer,
     EntitySerializer, TripleSerializer, SearchResultSerializer, FacetSerializer
 )
+from .services import semantic_search
 
 
 class StudyViewSet(viewsets.ReadOnlyModelViewSet):
@@ -62,11 +63,64 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
         """Semantic search across studies and evidence"""
         query = request.query_params.get('q', '')
         limit = int(request.query_params.get('limit', 20))
+        threshold = float(request.query_params.get('threshold', 0.5))
         
         if not query:
             return Response({'results': [], 'total': 0})
         
-        # Simple text search for now (will be enhanced with embeddings later)
+        # Try semantic search first
+        if semantic_search.is_available():
+            search_results = semantic_search.search(query, top_k=limit, threshold=threshold)
+            
+            if search_results:
+                # Get evidence sentences and group by study
+                evidence_ids = [r['evidence_id'] for r in search_results]
+                evidence_sentences = semantic_search.get_evidence_by_ids(evidence_ids)
+                
+                # Group by study
+                studies_dict = {}
+                for evidence in evidence_sentences:
+                    study_id = evidence.study_id
+                    if study_id not in studies_dict:
+                        studies_dict[study_id] = {
+                            'study': evidence.study,
+                            'evidence_sentences': [],
+                            'max_similarity': 0.0
+                        }
+                    
+                    # Find similarity score for this evidence
+                    similarity = next(
+                        (r['similarity_score'] for r in search_results if r['evidence_id'] == evidence.id),
+                        0.0
+                    )
+                    
+                    studies_dict[study_id]['evidence_sentences'].append({
+                        'evidence': evidence,
+                        'similarity': similarity
+                    })
+                    studies_dict[study_id]['max_similarity'] = max(
+                        studies_dict[study_id]['max_similarity'], similarity
+                    )
+                
+                # Format results
+                results = []
+                for study_data in studies_dict.values():
+                    evidence_list = [es['evidence'] for es in study_data['evidence_sentences']]
+                    result = {
+                        'study': StudySerializer(study_data['study']).data,
+                        'evidence_sentences': EvidenceSentenceSerializer(evidence_list, many=True).data,
+                        'relevance_score': study_data['max_similarity']
+                    }
+                    results.append(result)
+                
+                return Response({
+                    'results': results,
+                    'total': len(results),
+                    'query': query,
+                    'search_type': 'semantic'
+                })
+        
+        # Fallback to simple text search
         studies = Study.objects.filter(
             Q(title__icontains=query) | 
             Q(abstract__icontains=query)
@@ -90,7 +144,8 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
         return Response({
             'results': results,
             'total': len(results),
-            'query': query
+            'query': query,
+            'search_type': 'text'
         })
     
     @action(detail=False, methods=['get'])
