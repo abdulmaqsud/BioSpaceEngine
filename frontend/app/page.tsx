@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SearchInterface from '../components/SearchInterface';
 import SearchResults from '../components/SearchResults';
 import StudyBrowser from '../components/StudyBrowser';
@@ -10,6 +10,11 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'search' | 'browse'>('search');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSearchResults = (results: SearchResult[]) => {
     setSearchResults(results);
@@ -18,6 +23,17 @@ export default function Home() {
   const handleLoading = (isLoading: boolean) => {
     setLoading(isLoading);
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading BioSpace Knowledge Engine...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -10,5 +10,5 @@ router.register(r'entities', views.EntityViewSet)
 router.register(r'triples', views.TripleViewSet)
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ]
