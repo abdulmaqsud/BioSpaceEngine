@@ -60,40 +60,112 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
     
     @action(detail=False, methods=['get'])
     def search(self, request):
-        """Semantic search across studies and evidence"""
+        """Semantic search across studies and evidence with filtering"""
         query = request.query_params.get('q', '')
         limit = int(request.query_params.get('limit', 20))
         threshold = float(request.query_params.get('threshold', 0.5))
         
-        if not query:
-            return Response({'results': [], 'total': 0})
+        # Filter parameters
+        organism = request.query_params.get('organism', '')
+        exposure = request.query_params.get('exposure', '')
+        system = request.query_params.get('system', '')
+        year = request.query_params.get('year', '')
+        assay = request.query_params.get('assay', '')
+        mission = request.query_params.get('mission', '')
+
+        # Build base queryset with filters
+        studies_queryset = Study.objects.all()
         
+        # Apply filters
+        if organism:
+            studies_queryset = studies_queryset.filter(
+                Q(title__icontains=organism) | 
+                Q(abstract__icontains=organism) |
+                Q(sections__content__icontains=organism)
+            ).distinct()
+        
+        if exposure:
+            studies_queryset = studies_queryset.filter(
+                Q(title__icontains=exposure) | 
+                Q(abstract__icontains=exposure) |
+                Q(sections__content__icontains=exposure)
+            ).distinct()
+        
+        if system:
+            studies_queryset = studies_queryset.filter(
+                Q(title__icontains=system) | 
+                Q(abstract__icontains=system) |
+                Q(sections__content__icontains=system)
+            ).distinct()
+        
+        if year:
+            studies_queryset = studies_queryset.filter(year=year)
+        
+        if assay:
+            studies_queryset = studies_queryset.filter(
+                Q(title__icontains=assay) | 
+                Q(abstract__icontains=assay) |
+                Q(sections__content__icontains=assay)
+            ).distinct()
+        
+        if mission:
+            studies_queryset = studies_queryset.filter(
+                Q(title__icontains=mission) | 
+                Q(abstract__icontains=mission) |
+                Q(sections__content__icontains=mission)
+            ).distinct()
+
+        if not query:
+            # If no query, return filtered studies
+            studies = studies_queryset[:limit]
+            results = []
+            for study in studies:
+                result = {
+                    'study': StudySerializer(study).data,
+                    'evidence_sentences': [],
+                    'relevance_score': 1.0
+                }
+                results.append(result)
+            
+            return Response({
+                'results': results,
+                'total': len(results),
+                'query': '',
+                'search_type': 'filtered'
+            })
+
         # Try semantic search first
         if semantic_search.is_available():
-            search_results = semantic_search.search(query, top_k=limit, threshold=threshold)
-            
+            search_results = semantic_search.search(query, top_k=limit*2, threshold=threshold)
+
             if search_results:
                 # Get evidence sentences and group by study
                 evidence_ids = [r['evidence_id'] for r in search_results]
                 evidence_sentences = semantic_search.get_evidence_by_ids(evidence_ids)
-                
-                # Group by study
+
+                # Group by study and apply filters
                 studies_dict = {}
                 for evidence in evidence_sentences:
-                    study_id = evidence.study_id
+                    study = evidence.study
+                    
+                    # Check if study passes filters
+                    if study not in studies_queryset:
+                        continue
+                        
+                    study_id = study.id
                     if study_id not in studies_dict:
                         studies_dict[study_id] = {
-                            'study': evidence.study,
+                            'study': study,
                             'evidence_sentences': [],
                             'max_similarity': 0.0
                         }
-                    
+
                     # Find similarity score for this evidence
                     similarity = next(
                         (r['similarity_score'] for r in search_results if r['evidence_id'] == evidence.id),
                         0.0
                     )
-                    
+
                     studies_dict[study_id]['evidence_sentences'].append({
                         'evidence': evidence,
                         'similarity': similarity
@@ -101,7 +173,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                     studies_dict[study_id]['max_similarity'] = max(
                         studies_dict[study_id]['max_similarity'], similarity
                     )
-                
+
                 # Format results
                 results = []
                 for study_data in studies_dict.values():
@@ -113,19 +185,23 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                     }
                     results.append(result)
                 
+                # Sort by relevance and limit
+                results.sort(key=lambda x: x['relevance_score'], reverse=True)
+                results = results[:limit]
+
                 return Response({
                     'results': results,
                     'total': len(results),
                     'query': query,
                     'search_type': 'semantic'
                 })
-        
-        # Fallback to simple text search
-        studies = Study.objects.filter(
-            Q(title__icontains=query) | 
+
+        # Fallback to simple text search with filters
+        studies = studies_queryset.filter(
+            Q(title__icontains=query) |
             Q(abstract__icontains=query)
         )[:limit]
-        
+
         results = []
         for study in studies:
             # Find relevant evidence sentences
@@ -133,14 +209,14 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 study=study,
                 sentence_text__icontains=query
             )[:5]  # Top 5 relevant sentences
-            
+
             result = {
                 'study': StudySerializer(study).data,
                 'evidence_sentences': EvidenceSentenceSerializer(evidence, many=True).data,
                 'relevance_score': 1.0  # Placeholder
             }
             results.append(result)
-        
+
         return Response({
             'results': results,
             'total': len(results),

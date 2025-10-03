@@ -45,7 +45,16 @@ export default function ExplorePage() {
     setLoading(true);
     
     try {
-      const response = await apiService.searchStudies(searchQuery, 50, 0.3);
+      const filters = {
+        organism: selectedOrganism,
+        exposure: selectedExposure,
+        system: selectedSystem,
+        year: selectedYear,
+        assay: selectedAssay,
+        mission: selectedMission,
+      };
+      
+      const response = await apiService.searchStudies(searchQuery, 50, 0.3, filters);
       setSearchResults(response.results);
     } catch (error) {
       console.error('Search failed:', error);
@@ -76,6 +85,11 @@ export default function ExplorePage() {
         setSelectedMission(value);
         break;
     }
+    
+    // Auto-search when filters change
+    if (query) {
+      handleSearch(query);
+    }
   };
 
   const clearFilters = () => {
@@ -85,7 +99,42 @@ export default function ExplorePage() {
     setSelectedYear('');
     setSelectedAssay('');
     setSelectedMission('');
+    
+    // Re-search with cleared filters
+    if (query) {
+      handleSearch(query);
+    }
   };
+
+  // Auto-search when filters change (even without query)
+  useEffect(() => {
+    const hasFilters = selectedOrganism || selectedExposure || selectedSystem || 
+                      selectedYear || selectedAssay || selectedMission;
+    
+    if (hasFilters) {
+      const filters = {
+        organism: selectedOrganism,
+        exposure: selectedExposure,
+        system: selectedSystem,
+        year: selectedYear,
+        assay: selectedAssay,
+        mission: selectedMission,
+      };
+      
+      setLoading(true);
+      apiService.searchStudies(query || '', 50, 0.3, filters)
+        .then(response => {
+          setSearchResults(response.results);
+        })
+        .catch(error => {
+          console.error('Filter search failed:', error);
+          setSearchResults([]);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [selectedOrganism, selectedExposure, selectedSystem, selectedYear, selectedAssay, selectedMission, query]);
 
   const activeFilters = [
     selectedOrganism,
