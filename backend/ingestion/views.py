@@ -173,9 +173,8 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             ).distinct()
 
         if not query:
-            # If no query, return filtered studies with a reasonable limit
-            max_results = min(limit, 100)  # Cap at 100 results for filter-only searches
-            studies = studies_queryset[:max_results]
+            # If no query, return filtered studies
+            studies = studies_queryset[:limit]
             results = []
             for study in studies:
                 result = {
@@ -286,10 +285,34 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
     def facets(self, request):
         """Get available filter facets"""
         
-        # Get actual organism counts from the database
+        # Get actual organism counts from the database (matching search logic)
         organism_facets = []
-        organisms = ['Human', 'Mouse', 'Rat', 'Plant', 'Bacteria', 'Other']
-        for organism in organisms:
+        
+        # Human count (excluding mouse/rat studies)
+        human_count = Study.objects.filter(
+            Q(title__icontains='human') | 
+            Q(abstract__icontains='human') |
+            Q(sections__content__icontains='human')
+        ).exclude(
+            Q(title__icontains='mouse') | 
+            Q(title__icontains='rat') | 
+            Q(title__icontains='animal')
+        ).distinct().count()
+        if human_count > 0:
+            organism_facets.append({'name': 'Human', 'count': human_count})
+        
+        # Mouse count
+        mouse_count = Study.objects.filter(
+            Q(title__icontains='mouse') | 
+            Q(abstract__icontains='mouse') |
+            Q(sections__content__icontains='mouse')
+        ).distinct().count()
+        if mouse_count > 0:
+            organism_facets.append({'name': 'Mouse', 'count': mouse_count})
+        
+        # Other organisms
+        other_organisms = ['Rat', 'Plant', 'Bacteria', 'Other']
+        for organism in other_organisms:
             count = Study.objects.filter(
                 Q(title__icontains=organism.lower()) | 
                 Q(abstract__icontains=organism.lower()) |
