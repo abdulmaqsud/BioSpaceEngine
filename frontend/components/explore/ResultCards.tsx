@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SearchResult } from '../../lib/api';
 import Link from 'next/link';
 
@@ -13,12 +13,32 @@ interface ResultCardsProps {
 export default function ResultCards({ results, loading, query }: ResultCardsProps) {
   const [compareList, setCompareList] = useState<number[]>([]);
 
+  // Load compare list from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('compareList');
+      if (stored) {
+        setCompareList(JSON.parse(stored));
+      }
+    }
+  }, []);
+
   const handleAddToCompare = (studyId: number) => {
     if (compareList.includes(studyId)) {
-      setCompareList(compareList.filter(id => id !== studyId));
+      // Remove from compare list
+      const updatedList = compareList.filter(id => id !== studyId);
+      setCompareList(updatedList);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('compareList', JSON.stringify(updatedList));
+      }
     } else {
       if (compareList.length < 3) { // Limit to 3 studies for comparison
-        setCompareList([...compareList, studyId]);
+        // Add to compare list
+        const updatedList = [...compareList, studyId];
+        setCompareList(updatedList);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('compareList', JSON.stringify(updatedList));
+        }
       } else {
         alert('You can compare up to 3 studies at a time');
       }

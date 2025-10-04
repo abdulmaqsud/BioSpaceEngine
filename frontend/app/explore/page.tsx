@@ -7,6 +7,7 @@ import FacetFilters from '../../components/explore/FacetFilters';
 import ResultCards from '../../components/explore/ResultCards';
 import CoverageMeter from '../../components/explore/CoverageMeter';
 import ClientOnly from '../../components/ClientOnly';
+import Link from 'next/link';
 
 export default function ExplorePage() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -196,24 +197,30 @@ export default function ExplorePage() {
               </span>
             </div>
             <div className="flex space-x-4">
-              <a
+              <Link
+                href="/compare"
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+              >
+                🔍 Compare
+              </Link>
+              <Link
                 href="/consensus"
                 className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
               >
                 📊 Consensus
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/graph"
                 className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
               >
                 🕸️ Knowledge Graph
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/about"
                 className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
               >
                 ℹ️ About
-              </a>
+              </Link>
             </div>
           </div>
         </div>

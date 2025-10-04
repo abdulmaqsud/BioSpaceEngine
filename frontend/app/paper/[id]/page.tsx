@@ -75,10 +75,20 @@ export default function PaperDetailPage() {
   const handleAddToCompare = () => {
     if (study && study.id) {
       if (compareList.includes(study.id)) {
-        setCompareList(compareList.filter(id => id !== study.id));
+        // Remove from compare list
+        const updatedList = compareList.filter(id => id !== study.id);
+        setCompareList(updatedList);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('compareList', JSON.stringify(updatedList));
+        }
       } else {
         if (compareList.length < 3) {
-          setCompareList([...compareList, study.id]);
+          // Add to compare list
+          const updatedList = [...compareList, study.id];
+          setCompareList(updatedList);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('compareList', JSON.stringify(updatedList));
+          }
         } else {
           alert('You can compare up to 3 studies at a time');
         }
@@ -239,68 +249,106 @@ export default function PaperDetailPage() {
               </div>
 
               {/* Tab Content */}
-              {activeTab === 'overview' && (
-                <div>
-                  {/* Abstract */}
-                  {study.abstract && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Abstract</h3>
-                      <p className="text-gray-700 leading-relaxed">{study.abstract}</p>
-                    </div>
-                  )}
-
-                  {/* Sections */}
-                  {sections.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Full Text Sections</h3>
-                      <div className="space-y-4">
-                        {sections.map((section, index) => (
-                          <div key={index} className="border border-gray-200 rounded-lg p-4">
-                            <h4 className="font-semibold text-gray-800 mb-2">{section.title}</h4>
-                            <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
-                              {section.content}
-                            </p>
+                      {activeTab === 'overview' && (
+                        <div>
+                          {/* Study Summary */}
+                          <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Study Summary</h3>
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                              <p className="text-gray-700 leading-relaxed">
+                                This study investigates <strong>{study.title}</strong> in the context of space biology research. 
+                                {study.abstract ? (
+                                  ` The research focuses on ${study.abstract.substring(0, 200)}...`
+                                ) : (
+                                  ' This research contributes to our understanding of biological systems in space environments and microgravity conditions.'
+                                )}
+                              </p>
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
-                  {/* Summary Bullets */}
-                  <div className="mt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Key Findings</h3>
-                    <div className="space-y-2">
-                      {evidence.slice(0, 5).map((evidenceItem, index) => (
-                        <div key={evidenceItem.id} className="flex items-start">
-                          <span className="text-blue-500 mr-2 mt-1">•</span>
-                          <p className="text-sm text-gray-700">{evidenceItem.sentence_text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
+                          {/* Abstract */}
+                          {study.abstract && (
+                            <div className="mb-6">
+                              <h3 className="text-lg font-semibold text-gray-900 mb-3">Abstract</h3>
+                              <p className="text-gray-700 leading-relaxed">{study.abstract}</p>
+                            </div>
+                          )}
 
-              {activeTab === 'evidence' && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Evidence Sentences</h3>
-                  <div className="space-y-3">
-                    {evidence.map((evidenceItem, index) => (
-                      <div key={evidenceItem.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                            Sentence {evidenceItem.sentence_index}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            Position: {evidenceItem.char_start}-{evidenceItem.char_end}
-                          </span>
+                          {/* Key Findings */}
+                          <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Key Findings</h3>
+                            <div className="space-y-3">
+                              {evidence.slice(0, 3).map((evidenceItem, index) => (
+                                <div key={evidenceItem.id} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                  <div className="flex items-start">
+                                    <span className="text-green-500 mr-2 mt-1">•</span>
+                                    <p className="text-sm text-gray-700">{evidenceItem.sentence_text}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Research Context */}
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Research Context</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="font-medium text-gray-700">Publication Year:</span>
+                                <span className="ml-2 text-gray-600">{study.year || 'Not specified'}</span>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-700">Journal:</span>
+                                <span className="ml-2 text-gray-600">{study.journal || 'Not specified'}</span>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-700">Evidence Sentences:</span>
+                                <span className="ml-2 text-gray-600">{evidence.length} key findings</span>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-700">PMCID:</span>
+                                <span className="ml-2 text-blue-600">{study.pmcid}</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-700">{evidenceItem.sentence_text}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                      )}
+
+                      {activeTab === 'evidence' && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3">Research Evidence</h3>
+                          <p className="text-gray-600 mb-4">Key findings and evidence extracted from this study:</p>
+                          <div className="space-y-4">
+                            {evidence.length > 0 ? (
+                              evidence.map((evidenceItem, index) => (
+                                <div key={evidenceItem.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <span className="text-sm font-medium text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                                      Finding #{index + 1}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      Position: {evidenceItem.char_start}-{evidenceItem.char_end}
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-700 leading-relaxed">{evidenceItem.sentence_text}</p>
+                                  <div className="mt-3 pt-3 border-t border-blue-200">
+                                    <div className="flex items-center text-xs text-gray-500">
+                                      <span className="mr-4">Sentence Index: {evidenceItem.sentence_index}</span>
+                                      <span>Study ID: {evidenceItem.study}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-center py-8 text-gray-500">
+                                <div className="text-4xl mb-2">🔍</div>
+                                <p>No evidence sentences extracted yet</p>
+                                <p className="text-sm mt-1">Evidence extraction is still in progress for this study</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
               {activeTab === 'entities' && (
                 <div>
@@ -400,28 +448,53 @@ export default function PaperDetailPage() {
                 </div>
               </div>
 
-              {/* Study Tags */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Study Tags</h3>
-                <div className="flex flex-wrap gap-2">
-                  {study.year && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {study.year}
-                    </span>
-                  )}
-                  {study.journal && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {study.journal.split(' ')[0]}
-                    </span>
-                  )}
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                    Space Biology
-                  </span>
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                    NASA Research
-                  </span>
-                </div>
-              </div>
+                      {/* Study Tags */}
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Study Tags</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {study.year && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {study.year}
+                            </span>
+                          )}
+                          {study.journal && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {study.journal.split(' ')[0]}
+                            </span>
+                          )}
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            Space Biology
+                          </span>
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            NASA Research
+                          </span>
+                          {study.title.toLowerCase().includes('microgravity') && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              Microgravity
+                            </span>
+                          )}
+                          {study.title.toLowerCase().includes('bone') && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              Bone Research
+                            </span>
+                          )}
+                          {study.title.toLowerCase().includes('muscle') && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                              Muscle Research
+                            </span>
+                          )}
+                          {study.title.toLowerCase().includes('plant') && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                              Plant Biology
+                            </span>
+                          )}
+                          {study.title.toLowerCase().includes('immune') && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                              Immunology
+                            </span>
+                          )}
+                        </div>
+                      </div>
             </div>
           </div>
         </div>
