@@ -32,40 +32,31 @@ export default function FacetFilters({
       title: 'Organism',
       key: 'organism',
       selected: selectedOrganism,
-      options: [
-        { name: 'Human', count: 245 },
-        { name: 'Mouse', count: 189 },
-        { name: 'Rat', count: 67 },
-        { name: 'Plant', count: 89 },
-        { name: 'Bacteria', count: 34 },
-        { name: 'Other', count: 28 }
-      ]
+      options: facets?.organisms || []
     },
     {
       title: 'Exposure',
       key: 'exposure',
       selected: selectedExposure,
-      options: [
-        { name: 'Microgravity', count: 312 },
-        { name: 'Radiation', count: 156 },
-        { name: 'Isolation', count: 89 },
-        { name: 'Hypoxia', count: 45 },
-        { name: 'Other', count: 78 }
-      ]
+      options: facets?.exposures || []
     },
     {
       title: 'System',
       key: 'system',
       selected: selectedSystem,
-      options: [
-        { name: 'Bone', count: 134 },
-        { name: 'Muscle', count: 98 },
-        { name: 'Cardiovascular', count: 76 },
-        { name: 'Immune', count: 54 },
-        { name: 'Neurological', count: 43 },
-        { name: 'Plant Root', count: 67 },
-        { name: 'Other', count: 89 }
-      ]
+      options: facets?.systems || []
+    },
+    {
+      title: 'Model Organism',
+      key: 'model_organism',
+      selected: selectedOrganism, // Reuse organism selection for now
+      options: facets?.model_organisms || []
+    },
+    {
+      title: 'Molecular Biology',
+      key: 'molecular',
+      selected: selectedSystem, // Reuse system selection for now
+      options: facets?.molecular || []
     },
     {
       title: 'Year',
