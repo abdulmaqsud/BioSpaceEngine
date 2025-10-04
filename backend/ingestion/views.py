@@ -282,58 +282,84 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             'search_type': 'text'
         })
     
-            @action(detail=False, methods=['get'])
-            def facets(self, request):
-                """Get available filter facets"""
-                
-                # Get actual organism counts from the database
-                organism_facets = []
-                organisms = ['Human', 'Mouse', 'Rat', 'Plant', 'Bacteria', 'Other']
-                for organism in organisms:
-                    count = Study.objects.filter(
-                        Q(title__icontains=organism.lower()) | 
-                        Q(abstract__icontains=organism.lower()) |
-                        Q(sections__content__icontains=organism.lower())
-                    ).distinct().count()
-                    if count > 0:
-                        organism_facets.append({'name': organism, 'count': count})
-                
-                # Get actual year counts from the database
-                year_facets = []
-                years = ['2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016']
-                for year in years:
-                    count = Study.objects.filter(
-                        Q(title__icontains=year) | 
-                        Q(abstract__icontains=year) |
-                        Q(sections__content__icontains=year)
-                    ).distinct().count()
-                    if count > 0:
-                        year_facets.append({'name': year, 'count': count})
-                
-                # Get actual journal counts from the database
-                journal_facets = []
-                journals = ['NPJ Microgravity', 'Life Sciences in Space Research', 'Gravitational and Space Research', 
-                           'Acta Astronautica', 'Space Biology and Medicine', 'Journal of Applied Physiology', 
-                           'Physiological Reports', 'Scientific Reports']
-                for journal in journals:
-                    count = Study.objects.filter(
-                        Q(title__icontains=journal) | 
-                        Q(abstract__icontains=journal) |
-                        Q(sections__content__icontains=journal)
-                    ).distinct().count()
-                    if count > 0:
-                        journal_facets.append({'name': journal, 'count': count})
-                
-                # Entity types (when entities are populated)
-                entity_types = Entity.objects.values('entity_type').annotate(count=Count('entity_type'))
-                entity_facets = [{'name': et['entity_type'], 'count': et['count']} for et in entity_types if et['entity_type']]
-                
-                return Response({
-                    'organisms': organism_facets,
-                    'years': year_facets,
-                    'journals': journal_facets,
-                    'entity_types': entity_facets,
-                })
+    @action(detail=False, methods=['get'])
+    def facets(self, request):
+        """Get available filter facets"""
+        
+        # Get actual organism counts from the database
+        organism_facets = []
+        organisms = ['Human', 'Mouse', 'Rat', 'Plant', 'Bacteria', 'Other']
+        for organism in organisms:
+            count = Study.objects.filter(
+                Q(title__icontains=organism.lower()) | 
+                Q(abstract__icontains=organism.lower()) |
+                Q(sections__content__icontains=organism.lower())
+            ).distinct().count()
+            if count > 0:
+                organism_facets.append({'name': organism, 'count': count})
+        
+        # Get exposure categories (more relevant for space biology)
+        exposure_facets = []
+        exposures = ['Microgravity', 'Radiation', 'Isolation', 'Hypoxia', 'Hypergravity']
+        for exposure in exposures:
+            count = Study.objects.filter(
+                Q(title__icontains=exposure.lower()) | 
+                Q(abstract__icontains=exposure.lower()) |
+                Q(sections__content__icontains=exposure.lower())
+            ).distinct().count()
+            if count > 0:
+                exposure_facets.append({'name': exposure, 'count': count})
+        
+        # Get system categories (more relevant for space biology)
+        system_facets = []
+        systems = ['Bone', 'Muscle', 'Cardiovascular', 'Immune', 'Plant Root', 'Nervous System']
+        for system in systems:
+            count = Study.objects.filter(
+                Q(title__icontains=system.lower()) | 
+                Q(abstract__icontains=system.lower()) |
+                Q(sections__content__icontains=system.lower())
+            ).distinct().count()
+            if count > 0:
+                system_facets.append({'name': system, 'count': count})
+        
+        # Get actual year counts from the database
+        year_facets = []
+        years = ['2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016']
+        for year in years:
+            count = Study.objects.filter(
+                Q(title__icontains=year) | 
+                Q(abstract__icontains=year) |
+                Q(sections__content__icontains=year)
+            ).distinct().count()
+            if count > 0:
+                year_facets.append({'name': year, 'count': count})
+        
+        # Get actual journal counts from the database
+        journal_facets = []
+        journals = ['NPJ Microgravity', 'Life Sciences in Space Research', 'Gravitational and Space Research', 
+                   'Acta Astronautica', 'Space Biology and Medicine', 'Journal of Applied Physiology', 
+                   'Physiological Reports', 'Scientific Reports']
+        for journal in journals:
+            count = Study.objects.filter(
+                Q(title__icontains=journal) | 
+                Q(abstract__icontains=journal) |
+                Q(sections__content__icontains=journal)
+            ).distinct().count()
+            if count > 0:
+                journal_facets.append({'name': journal, 'count': count})
+        
+        # Entity types (when entities are populated)
+        entity_types = Entity.objects.values('entity_type').annotate(count=Count('entity_type'))
+        entity_facets = [{'name': et['entity_type'], 'count': et['count']} for et in entity_types if et['entity_type']]
+        
+        return Response({
+            'organisms': organism_facets,
+            'exposures': exposure_facets,
+            'systems': system_facets,
+            'years': year_facets,
+            'journals': journal_facets,
+            'entity_types': entity_facets,
+        })
     
     @action(detail=False, methods=['get'])
     def debug(self, request):
