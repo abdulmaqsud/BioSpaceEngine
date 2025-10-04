@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { SearchResult } from '../../lib/api';
 import Link from 'next/link';
 
@@ -10,6 +11,19 @@ interface ResultCardsProps {
 }
 
 export default function ResultCards({ results, loading, query }: ResultCardsProps) {
+  const [compareList, setCompareList] = useState<number[]>([]);
+
+  const handleAddToCompare = (studyId: number) => {
+    if (compareList.includes(studyId)) {
+      setCompareList(compareList.filter(id => id !== studyId));
+    } else {
+      if (compareList.length < 3) { // Limit to 3 studies for comparison
+        setCompareList([...compareList, studyId]);
+      } else {
+        alert('You can compare up to 3 studies at a time');
+      }
+    }
+  };
   if (loading) {
     return (
       <div className="space-y-4">
@@ -74,14 +88,30 @@ export default function ResultCards({ results, loading, query }: ResultCardsProp
       {/* Result Cards */}
       <div className="space-y-4">
         {results.map((result, index) => (
-          <ResultCard key={result.study.id} result={result} rank={index + 1} />
+          <ResultCard 
+            key={result.study.id} 
+            result={result} 
+            rank={index + 1}
+            onAddToCompare={handleAddToCompare}
+            isInCompareList={compareList.includes(result.study.id)}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function ResultCard({ result, rank }: { result: SearchResult; rank: number }) {
+function ResultCard({ 
+  result, 
+  rank, 
+  onAddToCompare, 
+  isInCompareList 
+}: { 
+  result: SearchResult; 
+  rank: number;
+  onAddToCompare: (studyId: number) => void;
+  isInCompareList: boolean;
+}) {
   const { study, evidence_sentences, relevance_score } = result;
 
   // Generate key bullets from evidence sentences
@@ -178,8 +208,15 @@ function ResultCard({ result, rank }: { result: SearchResult; rank: number }) {
             >
               View Paper
             </Link>
-            <button className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
-              Add to Compare
+            <button 
+              onClick={() => onAddToCompare(study.id)}
+              className={`px-4 py-2 border text-sm font-medium rounded-lg transition-colors ${
+                isInCompareList 
+                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {isInCompareList ? 'Remove from Compare' : 'Add to Compare'}
             </button>
           </div>
           

@@ -1,5 +1,5 @@
 import requests
-import xml.etree.ElementTree as ET
+import lxml.etree as ET
 import time
 import re
 from django.core.management.base import BaseCommand, CommandError
@@ -90,6 +90,13 @@ class Command(BaseCommand):
         # Extract sections using JATS structure
         sections = self.extract_sections(root, study)
         
+        # Extract publication year from JATS XML
+        publication_year = self.extract_publication_year(root)
+        if publication_year:
+            study.year = publication_year
+            study.save()
+            self.stdout.write(f"Extracted year {publication_year} for {study.pmcid}")
+        
         # Save sections to database
         for section_data in sections:
             Section.objects.update_or_create(
@@ -102,6 +109,54 @@ class Command(BaseCommand):
                 }
             )
     
+    def extract_publication_year(self, root):
+        """Extract publication year from JATS XML"""
+        try:
+            # Define JATS namespace
+            ns = {'jats': 'http://jats.nlm.nih.gov/ns/1.0'}
+            
+            # Look for publication date in various JATS elements
+            pub_date_elements = [
+                '//jats:pub-date',
+                '//jats:article-meta//jats:pub-date',
+                '//jats:front//jats:article-meta//jats:pub-date',
+                '//jats:article-meta//jats:history//jats:date[@date-type="pub"]',
+                '//jats:article-meta//jats:history//jats:date[@date-type="accepted"]',
+                '//jats:article-meta//jats:history//jats:date[@date-type="received"]'
+            ]
+            
+            for xpath in pub_date_elements:
+                date_elements = root.xpath(xpath, namespaces=ns)
+                for date_elem in date_elements:
+                    # Look for year in the date element
+                    year_elem = date_elem.find('.//jats:year', ns)
+                    if year_elem is not None and year_elem.text:
+                        try:
+                            year = int(year_elem.text.strip())
+                            if 1990 <= year <= 2024:  # Reasonable year range
+                                return year
+                        except (ValueError, AttributeError):
+                            continue
+                    
+                    # Also check if year is in the date element text
+                    date_text = date_elem.text or ''
+                    if date_text:
+                        import re
+                        year_match = re.search(r'\b(19|20)\d{2}\b', date_text)
+                        if year_match:
+                            try:
+                                year = int(year_match.group())
+                                if 1990 <= year <= 2024:
+                                    return year
+                            except (ValueError, AttributeError):
+                                continue
+            
+            return None
+            
+        except Exception as e:
+            self.stdout.write(f"Error extracting publication year: {e}")
+            return None
+
     def extract_sections(self, root, study):
         """Extract sections from JATS XML"""
         sections = []

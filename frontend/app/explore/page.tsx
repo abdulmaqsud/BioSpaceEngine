@@ -109,6 +109,8 @@ export default function ExplorePage() {
     setSelectedYear('');
     setSelectedAssay('');
     setSelectedMission('');
+    setSelectedModelOrganism('');
+    setSelectedMolecular('');
     
     // Re-search with cleared filters
     if (query) {
@@ -116,10 +118,32 @@ export default function ExplorePage() {
     }
   };
 
+  const removeFilter = (filterValue: string) => {
+    // Remove specific filter by value
+    if (selectedOrganism === filterValue) {
+      setSelectedOrganism('');
+    } else if (selectedExposure === filterValue) {
+      setSelectedExposure('');
+    } else if (selectedSystem === filterValue) {
+      setSelectedSystem('');
+    } else if (selectedYear === filterValue) {
+      setSelectedYear('');
+    } else if (selectedAssay === filterValue) {
+      setSelectedAssay('');
+    } else if (selectedMission === filterValue) {
+      setSelectedMission('');
+    } else if (selectedModelOrganism === filterValue) {
+      setSelectedModelOrganism('');
+    } else if (selectedMolecular === filterValue) {
+      setSelectedMolecular('');
+    }
+  };
+
   // Auto-search when filters change (even without query)
   useEffect(() => {
     const hasFilters = selectedOrganism || selectedExposure || selectedSystem || 
-                      selectedYear || selectedAssay || selectedMission;
+                      selectedYear || selectedAssay || selectedMission ||
+                      selectedModelOrganism || selectedMolecular;
     
     if (hasFilters) {
       const filters = {
@@ -129,6 +153,8 @@ export default function ExplorePage() {
         year: selectedYear,
         assay: selectedAssay,
         mission: selectedMission,
+        model_organism: selectedModelOrganism,
+        molecular: selectedMolecular,
       };
       
       setLoading(true);
@@ -144,7 +170,7 @@ export default function ExplorePage() {
           setLoading(false);
         });
     }
-  }, [selectedOrganism, selectedExposure, selectedSystem, selectedYear, selectedAssay, selectedMission, query]);
+  }, [selectedOrganism, selectedExposure, selectedSystem, selectedYear, selectedAssay, selectedMission, selectedModelOrganism, selectedMolecular, query]);
 
   const activeFilters = [
     selectedOrganism,
@@ -153,6 +179,8 @@ export default function ExplorePage() {
     selectedYear,
     selectedAssay,
     selectedMission,
+    selectedModelOrganism,
+    selectedMolecular,
   ].filter(Boolean);
 
   return (
@@ -244,8 +272,7 @@ export default function ExplorePage() {
                       {filter}
                       <button
                         onClick={() => {
-                          // Remove specific filter logic here
-                          clearFilters();
+                          removeFilter(filter);
                         }}
                         className="ml-2 text-blue-600 hover:text-blue-800"
                       >

@@ -153,12 +153,25 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 ).distinct()
         
         if year:
-            # Since year field is not populated, filter by year mentioned in title/abstract
-            studies_queryset = studies_queryset.filter(
-                Q(title__icontains=year) | 
-                Q(abstract__icontains=year) |
-                Q(sections__content__icontains=year)
-            ).distinct()
+            # First try to use the year field if it's populated
+            year_int = int(year)
+            year_filtered = studies_queryset.filter(year=year_int)
+            
+            # If no results from year field, fall back to content search
+            if year_filtered.count() == 0:
+                studies_queryset = studies_queryset.filter(
+                    Q(title__icontains=year) | 
+                    Q(abstract__icontains=year) |
+                    Q(sections__content__icontains=year) |
+                    Q(title__icontains=f"({year})") |  # Year in parentheses
+                    Q(title__icontains=f", {year}") |  # Year after comma
+                    Q(abstract__icontains=f"({year})") |
+                    Q(abstract__icontains=f", {year}") |
+                    Q(sections__content__icontains=f"({year})") |
+                    Q(sections__content__icontains=f", {year}")
+                ).distinct()
+            else:
+                studies_queryset = year_filtered
         
         if assay:
             studies_queryset = studies_queryset.filter(
@@ -401,13 +414,26 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
         
         # Get actual year counts from the database
         year_facets = []
-        years = [str(year) for year in range(2024, 2000, -1)]  # 2024 to 2001
+        years = [str(year) for year in range(2024, 1990, -1)]  # 2024 to 1991 (expanded range)
         for year in years:
-            count = Study.objects.filter(
-                Q(title__icontains=year) | 
-                Q(abstract__icontains=year) |
-                Q(sections__content__icontains=year)
-            ).distinct().count()
+            # First try to use the year field if it's populated
+            year_int = int(year)
+            count = Study.objects.filter(year=year_int).count()
+            
+            # If no results from year field, fall back to content search
+            if count == 0:
+                count = Study.objects.filter(
+                    Q(title__icontains=year) | 
+                    Q(abstract__icontains=year) |
+                    Q(sections__content__icontains=year) |
+                    Q(title__icontains=f"({year})") |  # Year in parentheses
+                    Q(title__icontains=f", {year}") |  # Year after comma
+                    Q(abstract__icontains=f"({year})") |
+                    Q(abstract__icontains=f", {year}") |
+                    Q(sections__content__icontains=f"({year})") |
+                    Q(sections__content__icontains=f", {year}")
+                ).distinct().count()
+            
             if count > 0:
                 year_facets.append({'name': year, 'count': count})
         
