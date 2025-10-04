@@ -118,7 +118,7 @@ function StudyCard({ result, rank }: { result: SearchResult; rank: number }) {
               Relevant Evidence ({evidence_sentences.length}):
             </h5>
             <div className="space-y-2">
-              {evidence_sentences.slice(0, 3).map((evidence, idx) => (
+              {evidence_sentences.slice(0, 3).map((evidence) => (
                 <div key={evidence.id} className="bg-blue-50 border-l-4 border-blue-400 p-3">
                   <p className="text-sm text-gray-700">
                     {evidence.sentence_text}
@@ -140,7 +140,7 @@ function StudyCard({ result, rank }: { result: SearchResult; rank: number }) {
             PMCID: {study.pmcid}
           </div>
           <div className="text-xs text-gray-500">
-            Added: {new Date(study.created_at).toLocaleDateString()}
+            Added: {study.created_at ? new Date(study.created_at).toLocaleDateString() : '—'}
           </div>
         </div>
       </div>

@@ -14,58 +14,46 @@ export default function CoverageMeter({
   searchResultsCount
 }: CoverageMeterProps) {
   const fullTextPercentage = Math.round((fullTextCount / totalStudies) * 100);
-  const abstractOnlyPercentage = Math.round((abstractOnlyCount / totalStudies) * 100);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-sm font-medium text-gray-700">
+    <div className="rounded-2xl border border-cyan-500/10 bg-slate-950/70 p-6 shadow-[0_0_30px_rgba(20,80,160,0.28)]">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4 text-sm text-slate-200">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)]" />
+            <span className="font-semibold text-emerald-200">
               {searchResultsCount} / {totalStudies} indexed
             </span>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">
-              {fullTextCount} full-text
-            </span>
+
+          <div className="flex items-center gap-2 text-cyan-100">
+            <span className="h-3 w-3 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.6)]" />
+            {fullTextCount} full-text
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-            <span className="text-sm text-gray-600">
-              {abstractOnlyCount} abstract-only
-            </span>
+
+          <div className="flex items-center gap-2 text-slate-300">
+            <span className="h-3 w-3 rounded-full bg-slate-500/80" />
+            {abstractOnlyCount} abstract-only
           </div>
         </div>
 
-        <div className="text-sm text-gray-500">
-          {fullTextPercentage}% full-text coverage
+        <div className="text-xs uppercase tracking-[0.35em] text-cyan-200/80">
+          {fullTextPercentage}% coverage
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className="mt-3">
-        <div className="flex h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className="bg-green-500 transition-all duration-300"
-            style={{ width: `${fullTextPercentage}%` }}
-          ></div>
-          <div
-            className="bg-gray-400 transition-all duration-300"
-            style={{ width: `${abstractOnlyPercentage}%` }}
-          ></div>
-        </div>
+      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-800/70">
+        <div
+          className="h-full bg-gradient-to-r from-cyan-400 via-emerald-400 to-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.6)] transition-all duration-500"
+          style={{ width: `${fullTextPercentage}%` }}
+        />
       </div>
 
       {/* Additional Info */}
-      <div className="mt-2 text-xs text-gray-500">
+      <div className="mt-4 text-xs text-slate-300">
         <p>
-          💡 <strong>Coverage:</strong> {fullTextPercentage}% of studies have full-text access, 
-          enabling detailed analysis and AI-powered insights.
+          <span className="font-semibold text-cyan-200">💡 Coverage:</span> {fullTextPercentage}% of studies include full-text data, unlocking deep-trace evidence and AI narrations.
         </p>
       </div>
     </div>

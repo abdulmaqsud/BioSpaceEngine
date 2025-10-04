@@ -25,10 +25,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-transparent text-slate-100`}
         suppressHydrationWarning
       >
-        {children}
+        <div className="relative min-h-screen">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(15,155,255,0.15),transparent_55%),radial-gradient(circle_at_80%_10%,rgba(148,78,255,0.12),transparent_60%),radial-gradient(circle_at_50%_90%,rgba(16,88,216,0.12),transparent_55%)]" aria-hidden />
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(3,7,18,0.85),rgba(12,10,35,0.92))] backdrop-blur-sm" aria-hidden />
+          <div className="relative">
+            {children}
+          </div>
+        </div>
       </body>
     </html>
   );

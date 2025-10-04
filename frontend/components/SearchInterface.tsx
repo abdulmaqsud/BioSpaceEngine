@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiService, SearchResult, Study } from '../lib/api';
+import { apiService, SearchResult } from '../lib/api';
+
+type SearchMode = 'semantic' | 'text';
 
 interface SearchInterfaceProps {
   onSearchResults: (results: SearchResult[]) => void;
@@ -11,7 +13,7 @@ interface SearchInterfaceProps {
 export default function SearchInterface({ onSearchResults, onLoading }: SearchInterfaceProps) {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [searchType, setSearchType] = useState<'semantic' | 'text'>('semantic');
+  const [searchType, setSearchType] = useState<SearchMode>('semantic');
   const [threshold, setThreshold] = useState(0.5);
   const [mounted, setMounted] = useState(false);
 
@@ -29,7 +31,8 @@ export default function SearchInterface({ onSearchResults, onLoading }: SearchIn
     try {
       const response = await apiService.searchStudies(query, 20, threshold);
       onSearchResults(response.results);
-      setSearchType(response.search_type);
+  const normalizedType: SearchMode = response.search_type === 'filtered' ? 'semantic' : response.search_type;
+  setSearchType(normalizedType);
     } catch (error) {
       console.error('Search failed:', error);
       onSearchResults([]);
@@ -87,7 +90,7 @@ export default function SearchInterface({ onSearchResults, onLoading }: SearchIn
                 name="searchType"
                 value="semantic"
                 checked={searchType === 'semantic'}
-                onChange={(e) => setSearchType(e.target.value as 'semantic')}
+                onChange={(e) => setSearchType(e.target.value as SearchMode)}
                 className="text-blue-600"
               />
               <label htmlFor="semantic" className="text-sm font-medium text-gray-700">
@@ -102,7 +105,7 @@ export default function SearchInterface({ onSearchResults, onLoading }: SearchIn
                 name="searchType"
                 value="text"
                 checked={searchType === 'text'}
-                onChange={(e) => setSearchType(e.target.value as 'text')}
+                onChange={(e) => setSearchType(e.target.value as SearchMode)}
                 className="text-blue-600"
               />
               <label htmlFor="text" className="text-sm font-medium text-gray-700">
@@ -132,9 +135,21 @@ export default function SearchInterface({ onSearchResults, onLoading }: SearchIn
         <div className="mt-4 text-sm text-gray-600">
           <p>💡 <strong>AI Search Tips:</strong></p>
           <ul className="list-disc list-inside ml-4 space-y-1">
-            <li>Use natural language: "How does microgravity affect muscle mass?"</li>
-            <li>Try specific terms: "bone density", "plant growth", "radiation effects"</li>
-            <li>Lower relevance threshold shows more results</li>
+            <li>
+              Use natural language like
+              {' '}
+              <span className="text-gray-800">&ldquo;How does microgravity affect muscle mass?&rdquo;</span>
+            </li>
+            <li>
+              Try specific terms such as
+              {' '}
+              <span className="text-gray-800">&ldquo;bone density&rdquo;</span>,
+              {' '}
+              <span className="text-gray-800">&ldquo;plant growth&rdquo;</span>,
+              {' '}
+              <span className="text-gray-800">&ldquo;radiation effects&rdquo;</span>
+            </li>
+            <li>Lower the relevance threshold to surface more results</li>
           </ul>
         </div>
       </div>
