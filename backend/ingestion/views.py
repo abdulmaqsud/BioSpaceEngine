@@ -282,45 +282,58 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             'search_type': 'text'
         })
     
-    @action(detail=False, methods=['get'])
-    def facets(self, request):
-        """Get available filter facets"""
-        # Since year and journal data is not populated, use mock data for now
-        # In a real implementation, you'd need to populate these fields from PMC data
-        
-        # Mock years based on common publication years
-        year_facets = [
-            {'name': '2023', 'count': 45},
-            {'name': '2022', 'count': 38},
-            {'name': '2021', 'count': 42},
-            {'name': '2020', 'count': 35},
-            {'name': '2019', 'count': 28},
-            {'name': '2018', 'count': 31},
-            {'name': '2017', 'count': 25},
-            {'name': '2016', 'count': 22},
-        ]
-        
-        # Mock journals based on common space biology journals
-        journal_facets = [
-            {'name': 'NPJ Microgravity', 'count': 89},
-            {'name': 'Life Sciences in Space Research', 'count': 67},
-            {'name': 'Gravitational and Space Research', 'count': 45},
-            {'name': 'Acta Astronautica', 'count': 34},
-            {'name': 'Space Biology and Medicine', 'count': 28},
-            {'name': 'Journal of Applied Physiology', 'count': 23},
-            {'name': 'Physiological Reports', 'count': 19},
-            {'name': 'Scientific Reports', 'count': 15},
-        ]
-        
-        # Entity types (when entities are populated)
-        entity_types = Entity.objects.values('entity_type').annotate(count=Count('entity_type'))
-        entity_facets = [{'name': et['entity_type'], 'count': et['count']} for et in entity_types if et['entity_type']]
-        
-        return Response({
-            'years': year_facets,
-            'journals': journal_facets,
-            'entity_types': entity_facets,
-        })
+            @action(detail=False, methods=['get'])
+            def facets(self, request):
+                """Get available filter facets"""
+                
+                # Get actual organism counts from the database
+                organism_facets = []
+                organisms = ['Human', 'Mouse', 'Rat', 'Plant', 'Bacteria', 'Other']
+                for organism in organisms:
+                    count = Study.objects.filter(
+                        Q(title__icontains=organism.lower()) | 
+                        Q(abstract__icontains=organism.lower()) |
+                        Q(sections__content__icontains=organism.lower())
+                    ).distinct().count()
+                    if count > 0:
+                        organism_facets.append({'name': organism, 'count': count})
+                
+                # Get actual year counts from the database
+                year_facets = []
+                years = ['2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016']
+                for year in years:
+                    count = Study.objects.filter(
+                        Q(title__icontains=year) | 
+                        Q(abstract__icontains=year) |
+                        Q(sections__content__icontains=year)
+                    ).distinct().count()
+                    if count > 0:
+                        year_facets.append({'name': year, 'count': count})
+                
+                # Get actual journal counts from the database
+                journal_facets = []
+                journals = ['NPJ Microgravity', 'Life Sciences in Space Research', 'Gravitational and Space Research', 
+                           'Acta Astronautica', 'Space Biology and Medicine', 'Journal of Applied Physiology', 
+                           'Physiological Reports', 'Scientific Reports']
+                for journal in journals:
+                    count = Study.objects.filter(
+                        Q(title__icontains=journal) | 
+                        Q(abstract__icontains=journal) |
+                        Q(sections__content__icontains=journal)
+                    ).distinct().count()
+                    if count > 0:
+                        journal_facets.append({'name': journal, 'count': count})
+                
+                # Entity types (when entities are populated)
+                entity_types = Entity.objects.values('entity_type').annotate(count=Count('entity_type'))
+                entity_facets = [{'name': et['entity_type'], 'count': et['count']} for et in entity_types if et['entity_type']]
+                
+                return Response({
+                    'organisms': organism_facets,
+                    'years': year_facets,
+                    'journals': journal_facets,
+                    'entity_types': entity_facets,
+                })
     
     @action(detail=False, methods=['get'])
     def debug(self, request):
