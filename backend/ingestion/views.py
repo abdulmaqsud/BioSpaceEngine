@@ -72,6 +72,8 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
         year = request.query_params.get('year', '')
         assay = request.query_params.get('assay', '')
         mission = request.query_params.get('mission', '')
+        model_organism = request.query_params.get('model_organism', '')
+        molecular = request.query_params.get('molecular', '')
 
         # Build base queryset with filters
         studies_queryset = Study.objects.all()
@@ -170,6 +172,22 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(title__icontains=mission) | 
                 Q(abstract__icontains=mission) |
                 Q(sections__content__icontains=mission)
+            ).distinct()
+
+        # Model organism filtering
+        if model_organism:
+            studies_queryset = studies_queryset.filter(
+                Q(title__icontains=model_organism.lower()) | 
+                Q(abstract__icontains=model_organism.lower()) |
+                Q(sections__content__icontains=model_organism.lower())
+            ).distinct()
+
+        # Molecular biology filtering
+        if molecular:
+            studies_queryset = studies_queryset.filter(
+                Q(title__icontains=molecular.lower()) | 
+                Q(abstract__icontains=molecular.lower()) |
+                Q(sections__content__icontains=molecular.lower())
             ).distinct()
 
         if not query:
@@ -383,7 +401,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
         
         # Get actual year counts from the database
         year_facets = []
-        years = ['2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016']
+        years = [str(year) for year in range(2024, 2000, -1)]  # 2024 to 2001
         for year in years:
             count = Study.objects.filter(
                 Q(title__icontains=year) | 
