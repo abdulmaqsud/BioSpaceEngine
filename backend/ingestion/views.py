@@ -323,7 +323,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
         
         # Get exposure categories (more relevant for space biology)
         exposure_facets = []
-        exposures = ['Microgravity', 'Radiation', 'Isolation', 'Hypoxia', 'Hypergravity']
+        exposures = ['Microgravity', 'Radiation', 'Isolation', 'Hypoxia', 'Hypergravity', 'Spaceflight', 'Gravity']
         for exposure in exposures:
             count = Study.objects.filter(
                 Q(title__icontains=exposure.lower()) | 
@@ -335,7 +335,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
         
         # Get system categories (more relevant for space biology)
         system_facets = []
-        systems = ['Bone', 'Muscle', 'Cardiovascular', 'Immune', 'Plant Root', 'Nervous System']
+        systems = ['Bone', 'Muscle', 'Cardiovascular', 'Immune', 'Plant Root', 'Nervous System', 'Cell', 'Tissue']
         for system in systems:
             count = Study.objects.filter(
                 Q(title__icontains=system.lower()) | 
@@ -344,6 +344,42 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             ).distinct().count()
             if count > 0:
                 system_facets.append({'name': system, 'count': count})
+        
+        # Get model organism categories (major missing category!)
+        model_organism_facets = []
+        model_organisms = ['Arabidopsis', 'Drosophila', 'C. elegans', 'Mouse', 'Rat', 'Human']
+        for organism in model_organisms:
+            if organism.lower() == 'human':
+                # Use same logic as organism facets (exclude mouse/rat)
+                count = Study.objects.filter(
+                    Q(title__icontains='human') | 
+                    Q(abstract__icontains='human') |
+                    Q(sections__content__icontains='human')
+                ).exclude(
+                    Q(title__icontains='mouse') | 
+                    Q(title__icontains='rat') | 
+                    Q(title__icontains='animal')
+                ).distinct().count()
+            else:
+                count = Study.objects.filter(
+                    Q(title__icontains=organism.lower()) | 
+                    Q(abstract__icontains=organism.lower()) |
+                    Q(sections__content__icontains=organism.lower())
+                ).distinct().count()
+            if count > 0:
+                model_organism_facets.append({'name': organism, 'count': count})
+        
+        # Get molecular biology categories (major missing category!)
+        molecular_facets = []
+        molecular_terms = ['Gene', 'Protein', 'RNA', 'DNA', 'Molecular', 'Omics', 'Genomics', 'Proteomics']
+        for term in molecular_terms:
+            count = Study.objects.filter(
+                Q(title__icontains=term.lower()) | 
+                Q(abstract__icontains=term.lower()) |
+                Q(sections__content__icontains=term.lower())
+            ).distinct().count()
+            if count > 0:
+                molecular_facets.append({'name': term, 'count': count})
         
         # Get actual year counts from the database
         year_facets = []
@@ -379,6 +415,8 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             'organisms': organism_facets,
             'exposures': exposure_facets,
             'systems': system_facets,
+            'model_organisms': model_organism_facets,
+            'molecular': molecular_facets,
             'years': year_facets,
             'journals': journal_facets,
             'entity_types': entity_facets,
