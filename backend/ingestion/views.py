@@ -425,9 +425,9 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             if count > 0:
                 journal_facets.append({'name': journal, 'count': count})
         
-        # Get assay categories
+        # Get assay categories (using terms that actually exist in studies)
         assay_facets = []
-        assays = ['Microscopy', 'PCR', 'Western Blot', 'Flow Cytometry', 'ELISA', 'Immunofluorescence', 'RT-PCR', 'qPCR']
+        assays = ['Microscopy', 'PCR', 'Flow Cytometry', 'Sequencing', 'Proteomics', 'Genomics', 'Mass Spectrometry']
         for assay in assays:
             count = Study.objects.filter(
                 Q(title__icontains=assay) | 
@@ -437,9 +437,9 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             if count > 0:
                 assay_facets.append({'name': assay, 'count': count})
         
-        # Get mission categories
+        # Get mission categories (using terms that actually exist in studies)
         mission_facets = []
-        missions = ['ISS', 'Space Shuttle', 'Ground Control', 'Parabolic Flight', 'Bed Rest', 'Antarctica', 'Mars Simulation']
+        missions = ['ISS', 'Space Shuttle', 'Parabolic Flight', 'Antarctica', 'Mars', 'Simulation', 'Flight', 'Station']
         for mission in missions:
             count = Study.objects.filter(
                 Q(title__icontains=mission) | 
