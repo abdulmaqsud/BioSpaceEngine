@@ -26,6 +26,8 @@ export default function ExplorePage() {
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [selectedAssay, setSelectedAssay] = useState<string>('');
   const [selectedMission, setSelectedMission] = useState<string>('');
+  const [selectedModelOrganism, setSelectedModelOrganism] = useState<string>('');
+  const [selectedMolecular, setSelectedMolecular] = useState<string>('');
 
   useEffect(() => {
     loadFacets();
@@ -52,6 +54,8 @@ export default function ExplorePage() {
         year: selectedYear,
         assay: selectedAssay,
         mission: selectedMission,
+        model_organism: selectedModelOrganism,
+        molecular: selectedMolecular,
       };
       
       const response = await apiService.searchStudies(searchQuery, 50, 0.3, filters);
@@ -83,6 +87,12 @@ export default function ExplorePage() {
         break;
       case 'mission':
         setSelectedMission(value);
+        break;
+      case 'model_organism':
+        setSelectedModelOrganism(value);
+        break;
+      case 'molecular':
+        setSelectedMolecular(value);
         break;
     }
     
@@ -196,6 +206,8 @@ export default function ExplorePage() {
               selectedYear={selectedYear}
               selectedAssay={selectedAssay}
               selectedMission={selectedMission}
+              selectedModelOrganism={selectedModelOrganism}
+              selectedMolecular={selectedMolecular}
               onFacetChange={handleFacetChange}
               onClearFilters={clearFilters}
               activeFiltersCount={activeFilters.length}

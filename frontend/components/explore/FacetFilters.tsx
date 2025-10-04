@@ -10,6 +10,8 @@ interface FacetFiltersProps {
   selectedYear: string;
   selectedAssay: string;
   selectedMission: string;
+  selectedModelOrganism: string;
+  selectedMolecular: string;
   onFacetChange: (facetType: string, value: string) => void;
   onClearFilters: () => void;
   activeFiltersCount: number;
@@ -23,6 +25,8 @@ export default function FacetFilters({
   selectedYear,
   selectedAssay,
   selectedMission,
+  selectedModelOrganism,
+  selectedMolecular,
   onFacetChange,
   onClearFilters,
   activeFiltersCount
@@ -49,13 +53,13 @@ export default function FacetFilters({
     {
       title: 'Model Organism',
       key: 'model_organism',
-      selected: selectedOrganism, // Reuse organism selection for now
+      selected: selectedModelOrganism,
       options: facets?.model_organisms || []
     },
     {
       title: 'Molecular Biology',
       key: 'molecular',
-      selected: selectedSystem, // Reuse system selection for now
+      selected: selectedMolecular,
       options: facets?.molecular || []
     },
     {
