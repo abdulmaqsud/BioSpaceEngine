@@ -53,9 +53,13 @@ export default function ComparePage() {
       });
       setEvidence(evidenceMap);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading studies:', err);
-      setError(`Failed to load studies: ${err.message}`);
+      if (err instanceof Error) {
+        setError(`Failed to load studies: ${err.message}`);
+      } else {
+        setError('Failed to load studies.');
+      }
     } finally {
       setLoading(false);
     }
@@ -87,10 +91,13 @@ export default function ComparePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading studies for comparison...</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="space-y-4 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-cyan-400/40 bg-cyan-500/10 shadow-[0_0_40px_rgba(34,211,238,0.35)]">
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-cyan-200"></div>
+          </div>
+          <p className="text-sm uppercase tracking-[0.3em] text-cyan-200">Processing</p>
+          <p className="text-base text-slate-100">Loading studies for comparison...</p>
         </div>
       </div>
     );
@@ -98,14 +105,14 @@ export default function ComparePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">❌</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Studies</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Link 
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="w-full max-w-md space-y-4 rounded-2xl border border-rose-400/20 bg-slate-950/80 p-8 text-center shadow-[0_0_40px_rgba(244,114,182,0.28)]">
+          <div className="text-5xl">❌</div>
+          <h1 className="text-xl font-semibold text-slate-100">Error Loading Studies</h1>
+          <p className="text-sm text-slate-300">{error}</p>
+          <Link
             href="/explore"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center justify-center rounded-full border border-cyan-400/40 bg-cyan-500/20 px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-100 transition hover:border-cyan-200/60 hover:text-white"
           >
             Back to Search
           </Link>
@@ -116,18 +123,18 @@ export default function ComparePage() {
 
   if (studies.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-blue-500 text-6xl mb-4">🔍</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">No Studies to Compare</h1>
-          <p className="text-gray-600 mb-4">
-            Add studies to your comparison list from the search results or paper detail pages.
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="w-full max-w-lg space-y-4 rounded-2xl border border-cyan-400/20 bg-slate-950/75 p-10 text-center shadow-[0_0_45px_rgba(56,189,248,0.28)]">
+          <div className="text-6xl text-cyan-200">🔍</div>
+          <h1 className="text-2xl font-semibold text-slate-100">No Studies to Compare</h1>
+          <p className="text-sm text-slate-300">
+            Add studies to your comparison deck from the search results or paper detail pages.
           </p>
-          <Link 
+          <Link
             href="/explore"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center justify-center rounded-full border border-cyan-400/40 bg-cyan-500/20 px-5 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-100 transition hover:border-cyan-200/60 hover:text-white"
           >
-            Search Studies
+            Launch Search
           </Link>
         </div>
       </div>
@@ -135,66 +142,75 @@ export default function ComparePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
-                <Link href="/explore" className="hover:text-blue-600">
+    <div className="relative min-h-screen pb-24 text-slate-100">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(14,165,233,0.16),transparent_55%),radial-gradient(circle_at_90%_10%,rgba(147,51,234,0.14),transparent_60%),radial-gradient(circle_at_50%_90%,rgba(59,130,246,0.16),transparent_55%)]" aria-hidden />
+      <div className="absolute inset-0 bg-[linear-gradient(140deg,rgba(2,6,23,0.92),rgba(15,23,42,0.88))]" aria-hidden />
+      <div className="relative">
+        {/* Header */}
+        <header className="sticky top-0 z-30 border-b border-cyan-400/20 bg-slate-950/70 backdrop-blur-lg">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-6 sm:px-6 lg:px-8">
+            <div className="space-y-3">
+              <nav className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.3em] text-slate-400">
+                <Link href="/explore" className="transition hover:text-cyan-200">
                   Search
                 </Link>
                 <span>›</span>
-                <span className="text-gray-900 font-medium">Compare Studies</span>
+                <span className="text-cyan-200">Compare</span>
               </nav>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Compare Studies ({studies.length}/3)
-              </h1>
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
+                  Comparative Mission Control
+                </h1>
+                <p className="text-sm text-slate-300">
+                  Reviewing {studies.length} of 3 allowable studies side-by-side.
+                </p>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={clearAll}
-                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                className="rounded-full border border-slate-500/40 px-5 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-slate-300 transition hover:border-cyan-400/40 hover:text-cyan-100"
               >
                 Clear All
               </button>
-              <Link 
+              <Link
                 href="/explore"
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                className="rounded-full border border-cyan-400/40 bg-cyan-500/20 px-5 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-cyan-100 transition hover:border-cyan-200/60 hover:text-white"
               >
-                Add More Studies
+                Add More
               </Link>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content */}
+        <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {studies.map((study, index) => (
-            <div key={study.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div
+              key={study.id}
+              className="rounded-2xl border border-cyan-400/15 bg-slate-950/70 p-6 shadow-[0_0_32px_rgba(20,80,160,0.28)]"
+            >
               {/* Study Header */}
-              <div className="flex items-start justify-between mb-4">
+              <div className="mb-4 flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-500/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-cyan-100">
                       Study {index + 1}
                     </span>
                     {study.year && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-100">
                         {study.year}
                       </span>
                     )}
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-3">
+                  <h3 className="line-clamp-3 text-lg font-semibold text-slate-50">
                     {study.title}
                   </h3>
                 </div>
                 <button
                   onClick={() => removeStudy(study.id)}
-                  className="ml-2 text-gray-400 hover:text-red-500 transition-colors"
+                  className="ml-2 text-slate-500 transition hover:text-rose-300"
                   title="Remove from comparison"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,26 +220,26 @@ export default function ComparePage() {
               </div>
 
               {/* Study Metadata */}
-              <div className="space-y-2 mb-4">
+              <div className="mb-4 space-y-3 text-sm text-slate-300">
                 {study.authors && (
                   <div>
-                    <span className="text-xs font-medium text-gray-500">Authors:</span>
-                    <p className="text-sm text-gray-700 line-clamp-2">{study.authors}</p>
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Authors</span>
+                    <p className="line-clamp-2 text-slate-200">{study.authors}</p>
                   </div>
                 )}
                 {study.journal && (
                   <div>
-                    <span className="text-xs font-medium text-gray-500">Journal:</span>
-                    <p className="text-sm text-gray-700">{study.journal}</p>
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Journal</span>
+                    <p className="text-slate-200">{study.journal}</p>
                   </div>
                 )}
                 <div>
-                  <span className="text-xs font-medium text-gray-500">PMCID:</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">PMCID</span>
                   <a 
                     href={study.pmc_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:text-blue-800 ml-1"
+                    className="ml-2 text-sm text-cyan-200 transition hover:text-white"
                   >
                     {study.pmcid}
                   </a>
@@ -233,43 +249,48 @@ export default function ComparePage() {
               {/* Abstract */}
               {study.abstract && (
                 <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Abstract</h4>
-                  <p className="text-sm text-gray-700 line-clamp-4">{study.abstract}</p>
+                  <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Abstract</h4>
+                  <p className="line-clamp-4 text-sm text-slate-200/90">{study.abstract}</p>
                 </div>
               )}
 
               {/* Key Findings */}
               <div className="mb-4">
-                <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                <h4 className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
                   Key Findings ({evidence[study.id]?.length || 0})
                 </h4>
                 <div className="space-y-2">
                   {evidence[study.id]?.slice(0, 3).map((evidenceItem, idx) => (
-                    <div key={evidenceItem.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                    <div
+                      key={evidenceItem.id}
+                      className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-3 text-slate-100 shadow-[0_0_20px_rgba(34,211,238,0.2)]"
+                    >
+                      <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-[0.2em]">
+                        <span className="rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2 py-1 text-cyan-100">
                           Finding {idx + 1}
                         </span>
-                        <span className="text-xs text-gray-500">
-                          Pos: {evidenceItem.char_start}-{evidenceItem.char_end}
+                        <span className="text-slate-200/70">
+                          {evidenceItem.char_start}-{evidenceItem.char_end}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-700 line-clamp-3">{evidenceItem.sentence_text}</p>
+                      <p className="line-clamp-3 text-xs text-slate-100/90">
+                        {evidenceItem.sentence_text}
+                      </p>
                     </div>
                   ))}
                   {evidence[study.id]?.length > 3 && (
-                    <p className="text-xs text-gray-500 text-center">
-                      +{evidence[study.id].length - 3} more findings
+                    <p className="text-center text-[11px] uppercase tracking-[0.2em] text-cyan-200/70">
+                      +{evidence[study.id].length - 3} additional findings
                     </p>
                   )}
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex space-x-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Link 
                   href={`/paper/${study.id}`}
-                  className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors text-center"
+                  className="flex-1 rounded-xl border border-cyan-400/40 bg-cyan-500/20 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.25em] text-cyan-100 transition hover:border-cyan-200/60 hover:text-white"
                 >
                   View Details
                 </Link>
@@ -277,7 +298,7 @@ export default function ComparePage() {
                   href={study.pmc_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors text-center"
+                  className="flex-1 rounded-xl border border-slate-500/40 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.25em] text-slate-300 transition hover:border-cyan-400/40 hover:text-cyan-100"
                 >
                   View on PMC
                 </a>
@@ -288,38 +309,38 @@ export default function ComparePage() {
 
         {/* Comparison Summary */}
         {studies.length > 1 && (
-          <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Comparison Summary</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="mt-10 rounded-2xl border border-cyan-400/15 bg-slate-950/70 p-6 shadow-[0_0_32px_rgba(45,212,191,0.2)]">
+            <h2 className="mb-4 text-xl font-semibold text-cyan-100">Mission Summary Relay</h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Publication Years</h3>
-                <div className="space-y-1">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">Publication Years</h3>
+                <div className="space-y-2 text-sm text-slate-200">
                   {studies.map((study, index) => (
-                    <div key={study.id} className="flex justify-between text-sm">
-                      <span>Study {index + 1}:</span>
-                      <span className="font-medium">{study.year || 'N/A'}</span>
+                    <div key={study.id} className="flex items-center justify-between">
+                      <span>Study {index + 1}</span>
+                      <span className="font-semibold text-cyan-100">{study.year || 'N/A'}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Evidence Count</h3>
-                <div className="space-y-1">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">Evidence Count</h3>
+                <div className="space-y-2 text-sm text-slate-200">
                   {studies.map((study, index) => (
-                    <div key={study.id} className="flex justify-between text-sm">
-                      <span>Study {index + 1}:</span>
-                      <span className="font-medium">{evidence[study.id]?.length || 0} findings</span>
+                    <div key={study.id} className="flex items-center justify-between">
+                      <span>Study {index + 1}</span>
+                      <span className="font-semibold text-emerald-200">{evidence[study.id]?.length || 0} findings</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Journals</h3>
-                <div className="space-y-1">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">Journals</h3>
+                <div className="space-y-2 text-sm text-slate-200">
                   {studies.map((study, index) => (
-                    <div key={study.id} className="flex justify-between text-sm">
-                      <span>Study {index + 1}:</span>
-                      <span className="font-medium text-right line-clamp-1">
+                    <div key={study.id} className="flex items-center justify-between gap-3">
+                      <span>Study {index + 1}</span>
+                      <span className="line-clamp-1 text-right text-cyan-100">
                         {study.journal?.split(' ')[0] || 'N/A'}
                       </span>
                     </div>
@@ -329,31 +350,24 @@ export default function ComparePage() {
             </div>
           </div>
         )}
-      </main>
+        </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between">
+        {/* Footer */}
+        <footer className="mt-16 border-t border-cyan-400/10 bg-slate-950/70">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-slate-300 sm:px-6 lg:px-8">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                🚀 BioSpace Knowledge Engine
-              </h3>
-              <p className="text-sm text-gray-600">
-                AI-powered comparison of NASA Space Biology research
-              </p>
+              <h3 className="text-base font-semibold text-cyan-100">🚀 BioSpace Comparison Deck</h3>
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-400">NASA space biology intelligence</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link 
-                href="/explore"
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Back to Search
-              </Link>
-            </div>
+            <Link
+              href="/explore"
+              className="rounded-full border border-cyan-400/40 bg-cyan-500/20 px-5 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-cyan-100 transition hover:border-cyan-200/60 hover:text-white"
+            >
+              Return to Search
+            </Link>
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }

@@ -102,45 +102,55 @@ export default function FacetFilters({
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+    <div className="overflow-hidden rounded-2xl border border-cyan-500/15 bg-slate-950/70 shadow-[0_0_38px_rgba(14,58,130,0.32)]">
+      <div className="flex items-center justify-between border-b border-white/5 bg-slate-900/60 px-6 py-5">
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-cyan-100">Mission Filters</h3>
+          <p className="mt-1 text-xs text-slate-300/80">Fine-tune your orbit by organism, exposure, mission profile, and more.</p>
+        </div>
         {activeFiltersCount > 0 && (
           <button
             onClick={onClearFilters}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-cyan-100 transition hover:border-cyan-300/60 hover:text-white"
           >
-            Clear all ({activeFiltersCount})
+            Reset ×{activeFiltersCount}
           </button>
         )}
       </div>
 
-      <div className="space-y-6">
+      <div className="max-h-[70vh] space-y-6 overflow-y-auto px-6 py-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-700/60">
         {facetSections.map((section) => (
           <div key={section.key}>
-            <h4 className="text-sm font-medium text-gray-700 mb-3">
-              {section.title}
-            </h4>
+            <div className="mb-3 flex items-center justify-between">
+              <h4 className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-200">
+                {section.title}
+              </h4>
+              <span className="rounded-full border border-cyan-500/20 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.25em] text-cyan-100">
+                {section.options.length}
+              </span>
+            </div>
             <div className="space-y-2">
               {section.options.map((option) => (
                 <label
                   key={option.name}
-                  className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded"
+                  className={`flex cursor-pointer items-center justify-between rounded-xl border border-white/5 bg-slate-900/60 px-3 py-2 transition hover:border-cyan-400/40 hover:bg-cyan-500/5 ${
+                    section.selected === option.name ? 'border-cyan-400/60 bg-cyan-500/10 shadow-[0_0_16px_rgba(34,211,238,0.35)]' : ''
+                  }`}
                 >
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-3">
                     <input
                       type="radio"
                       name={section.key}
                       value={option.name}
                       checked={section.selected === option.name}
                       onChange={(e) => onFacetChange(section.key, e.target.value)}
-                      className="text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 border-cyan-400/40 text-cyan-400 focus:ring-cyan-300"
                     />
-                    <span className="ml-3 text-sm text-gray-700">
+                    <span className="text-sm text-slate-100">
                       {option.name}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs font-semibold text-cyan-100/80">
                     {option.count}
                   </span>
                 </label>
@@ -151,20 +161,20 @@ export default function FacetFilters({
       </div>
 
       {/* Quick Stats */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">Quick Stats</h4>
-        <div className="space-y-2 text-sm text-gray-600">
-          <div className="flex justify-between">
-            <span>Total Studies:</span>
-            <span className="font-medium">572</span>
+      <div className="border-t border-white/5 bg-slate-900/70 px-6 py-6">
+        <h4 className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-100">Mission Stats</h4>
+        <div className="mt-4 space-y-3 text-sm text-slate-200">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-300">Total Studies</span>
+            <span className="font-semibold text-cyan-100">572</span>
           </div>
-          <div className="flex justify-between">
-            <span>Full Text:</span>
-            <span className="font-medium">571</span>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-300">Full Text</span>
+            <span className="font-semibold text-emerald-200">571</span>
           </div>
-          <div className="flex justify-between">
-            <span>Abstract Only:</span>
-            <span className="font-medium">1</span>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-300">Abstract Only</span>
+            <span className="font-semibold text-amber-200">1</span>
           </div>
         </div>
       </div>

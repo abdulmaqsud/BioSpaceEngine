@@ -48,12 +48,12 @@ export default function ResultCards({ results, loading, query }: ResultCardsProp
     return (
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
-            <div className="h-6 bg-gray-200 rounded mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded mb-4 w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div key={i} className="animate-pulse rounded-2xl border border-cyan-500/10 bg-slate-950/70 p-6 shadow-[0_0_28px_rgba(15,60,130,0.25)]">
+            <div className="mb-4 h-6 rounded bg-slate-700/60"></div>
+            <div className="mb-2 h-4 rounded bg-slate-700/60"></div>
+            <div className="mb-4 h-4 w-3/4 rounded bg-slate-700/60"></div>
+            <div className="mb-2 h-4 rounded bg-slate-700/60"></div>
+            <div className="h-4 w-1/2 rounded bg-slate-700/60"></div>
           </div>
         ))}
       </div>
@@ -62,15 +62,15 @@ export default function ResultCards({ results, loading, query }: ResultCardsProp
 
   if (results.length === 0 && query) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-        <div className="text-gray-400 text-6xl mb-4">🔍</div>
-        <h3 className="text-xl font-semibold text-gray-700 mb-2">No results found</h3>
-        <p className="text-gray-500 mb-4">
+      <div className="rounded-2xl border border-cyan-500/10 bg-slate-950/70 p-12 text-center shadow-[0_0_30px_rgba(20,80,150,0.3)]">
+        <div className="mb-4 text-6xl text-cyan-200">🔍</div>
+        <h3 className="mb-2 text-xl font-semibold text-slate-100">No results found</h3>
+        <p className="mb-4 text-slate-300">
           Try adjusting your search terms or filters to find relevant studies.
         </p>
-        <div className="text-sm text-gray-400">
-          <p>💡 <strong>Suggestions:</strong></p>
-          <ul className="list-disc list-inside mt-2 space-y-1">
+        <div className="text-sm text-cyan-100/80">
+          <p>💡 <span className="font-semibold uppercase tracking-[0.25em]">Suggestions</span></p>
+          <ul className="mt-2 list-disc list-inside space-y-1 text-left text-slate-200">
             <li>Try broader search terms</li>
             <li>Check your spelling</li>
             <li>Use different keywords</li>
@@ -83,10 +83,10 @@ export default function ResultCards({ results, loading, query }: ResultCardsProp
 
   if (results.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-        <div className="text-gray-400 text-6xl mb-4">🚀</div>
-        <h3 className="text-xl font-semibold text-gray-700 mb-2">Ready to explore!</h3>
-        <p className="text-gray-500">
+      <div className="rounded-2xl border border-cyan-500/10 bg-slate-950/70 p-12 text-center shadow-[0_0_32px_rgba(20,80,150,0.3)]">
+        <div className="mb-4 text-6xl text-cyan-200">🚀</div>
+        <h3 className="mb-2 text-xl font-semibold text-slate-100">Ready to explore!</h3>
+        <p className="text-slate-300">
           Search for NASA Space Biology research or use the filters to discover studies.
         </p>
       </div>
@@ -97,10 +97,10 @@ export default function ResultCards({ results, loading, query }: ResultCardsProp
     <div className="space-y-6">
       {/* Results Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-cyan-100">
           {results.length} result{results.length !== 1 ? 's' : ''} found
         </h3>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm uppercase tracking-[0.3em] text-slate-400">
           Sorted by relevance
         </div>
       </div>
@@ -148,37 +148,37 @@ function ResultCard({
   ].slice(0, 3);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+    <div className="overflow-hidden rounded-2xl border border-cyan-500/10 bg-slate-950/60 shadow-[0_0_32px_rgba(25,78,145,0.35)] transition hover:border-cyan-400/40 hover:shadow-[0_0_38px_rgba(59,130,246,0.35)]">
       <div className="p-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded">
+              <span className="rounded-full border border-cyan-400/40 bg-cyan-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-cyan-100">
                 #{rank}
               </span>
-              <span className="bg-green-100 text-green-800 text-sm font-medium px-2 py-1 rounded">
+              <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-200">
                 {Math.round(relevance_score * 100)}% match
               </span>
               {study.year && (
-                <span className="bg-gray-100 text-gray-800 text-sm font-medium px-2 py-1 rounded">
+                <span className="rounded-full border border-slate-500/40 bg-slate-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-slate-200">
                   {study.year}
                 </span>
               )}
             </div>
             
-            <h4 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+            <h4 className="line-clamp-2 text-lg font-semibold text-slate-50">
               {study.title}
             </h4>
             
             {study.authors && (
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="mb-2 text-sm text-slate-300">
                 <strong>Authors:</strong> {study.authors}
               </p>
             )}
             
             {study.journal && (
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="mb-3 text-sm text-slate-300">
                 <strong>Journal:</strong> {study.journal}
               </p>
             )}
@@ -190,11 +190,11 @@ function ResultCard({
           {facetChips.map((chip, index) => (
             <span
               key={index}
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                chip.color === 'blue' ? 'bg-blue-100 text-blue-800' :
-                chip.color === 'green' ? 'bg-green-100 text-green-800' :
-                chip.color === 'purple' ? 'bg-purple-100 text-purple-800' :
-                'bg-gray-100 text-gray-800'
+              className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] ${
+                chip.color === 'blue' ? 'border border-cyan-400/40 bg-cyan-500/15 text-cyan-100' :
+                chip.color === 'green' ? 'border border-emerald-400/40 bg-emerald-500/10 text-emerald-100' :
+                chip.color === 'purple' ? 'border border-purple-400/40 bg-purple-500/15 text-purple-100' :
+                'border border-slate-500/40 bg-slate-500/20 text-slate-200'
               }`}
             >
               {chip.label}
@@ -205,12 +205,12 @@ function ResultCard({
         {/* Key Bullets */}
         {keyBullets.length > 0 && (
           <div className="mb-4">
-            <h5 className="text-sm font-semibold text-gray-700 mb-2">Key Findings:</h5>
-            <ul className="space-y-1">
+            <h5 className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-cyan-200">Key Findings</h5>
+            <ul className="space-y-2">
               {keyBullets.map((bullet, index) => (
-                <li key={index} className="text-sm text-gray-600 flex items-start">
-                  <span className="text-blue-500 mr-2">•</span>
-                  <span className={bullet.highlight ? 'bg-yellow-100 px-1 rounded' : ''}>
+                <li key={index} className="flex items-start gap-2 text-sm text-slate-200">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-cyan-300" />
+                  <span className={bullet.highlight ? 'rounded border border-amber-400/40 bg-amber-300/10 px-2 py-1 text-amber-100' : ''}>
                     {bullet.text}
                   </span>
                 </li>
@@ -220,28 +220,27 @@ function ResultCard({
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-          <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-between border-t border-white/5 pt-4">
+          <div className="flex flex-wrap items-center gap-3">
             <Link
               href={`/paper/${study.id}`}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              className="rounded-xl border border-cyan-400/40 bg-cyan-500/20 px-4 py-2 text-sm font-semibold uppercase tracking-[0.25em] text-cyan-100 transition hover:border-cyan-200/60 hover:text-white"
             >
               View Paper
             </Link>
             <button 
               onClick={() => onAddToCompare(study.id)}
-              className={`px-4 py-2 border text-sm font-medium rounded-lg transition-colors ${
+              className={`rounded-xl border px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] transition ${
                 isInCompareList 
-                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  ? 'border-cyan-400/60 bg-cyan-500/20 text-cyan-100 hover:border-cyan-200/60 hover:text-white' 
+                  : 'border-slate-500/40 text-slate-300 hover:border-cyan-400/40 hover:text-cyan-100'
               }`}
             >
               {isInCompareList ? 'Remove from Compare' : 'Add to Compare'}
             </button>
           </div>
-          
-          <div className="text-xs text-gray-500">
-            PMCID: {study.pmcid}
+          <div className="rounded-full border border-slate-500/30 bg-slate-800/60 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-300">
+            PMCID: <span className="text-cyan-200">{study.pmcid}</span>
           </div>
         </div>
       </div>

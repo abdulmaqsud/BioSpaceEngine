@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { apiService, Study, FacetsResponse } from '../lib/api';
+import { useState, useEffect, useCallback } from 'react';
+import { apiService, Study, FacetsResponse, StudiesFilters } from '../lib/api';
 
 export default function StudyBrowser() {
   const [studies, setStudies] = useState<Study[]>([]);
@@ -19,17 +19,19 @@ export default function StudyBrowser() {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (mounted) {
-      loadStudies();
-      loadFacets();
-    }
-  }, [mounted, page, selectedYear, selectedJournal]);
-
-  const loadStudies = async () => {
+  const loadStudies = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await apiService.getStudies(page, pageSize);
+      const filters: StudiesFilters = {};
+      if (selectedYear) {
+        filters.year_from = selectedYear;
+        filters.year_to = selectedYear;
+      }
+      if (selectedJournal) {
+        filters.journal = selectedJournal;
+      }
+
+      const response = await apiService.getStudies(page, pageSize, filters);
       setStudies(response.results);
       setTotalCount(response.count);
     } catch (error) {
@@ -37,16 +39,23 @@ export default function StudyBrowser() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize, selectedJournal, selectedYear]);
 
-  const loadFacets = async () => {
+  const loadFacets = useCallback(async () => {
     try {
       const response = await apiService.getFacets();
       setFacets(response);
     } catch (error) {
       console.error('Failed to load facets:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      loadStudies();
+      loadFacets();
+    }
+  }, [mounted, loadStudies, loadFacets]);
 
   const totalPages = Math.ceil(totalCount / pageSize);
 

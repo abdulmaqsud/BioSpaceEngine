@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -63,7 +63,7 @@ export default function SearchBar({ onSearch, loading, placeholder }: SearchBarP
   };
 
   return (
-    <div className="mb-8">
+    <div className="rounded-2xl border border-cyan-500/10 bg-slate-950/70 p-6 shadow-[0_0_35px_rgba(15,60,130,0.35)]">
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative">
           <input
@@ -74,16 +74,16 @@ export default function SearchBar({ onSearch, loading, placeholder }: SearchBarP
             onFocus={() => query.length > 2 && setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             placeholder={placeholder || "Search NASA Space Biology research..."}
-            className="w-full px-6 py-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+            className="w-full rounded-2xl border border-cyan-500/20 bg-slate-900/60 px-6 py-5 text-lg text-slate-100 shadow-[0_0_25px_rgba(8,47,73,0.25)] outline-none transition focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-400/40"
             disabled={loading}
           />
           <button
             type="submit"
             disabled={loading || !query.trim()}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2 rounded-xl border border-cyan-300/30 bg-cyan-500/20 px-5 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-100 transition hover:border-cyan-200/60 hover:text-white disabled:border-slate-600 disabled:text-slate-400"
           >
             {loading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-cyan-200"></div>
             ) : (
               'Search'
             )}
@@ -92,14 +92,14 @@ export default function SearchBar({ onSearch, loading, placeholder }: SearchBarP
 
         {/* Search Suggestions */}
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+          <div className="absolute z-10 mt-2 w-full overflow-hidden rounded-2xl border border-cyan-500/20 bg-slate-950/90 shadow-[0_0_35px_rgba(12,74,110,0.35)] backdrop-blur">
             {suggestions.map((suggestion, index) => (
               <button
                 key={index}
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                className="w-full border-b border-white/5 px-4 py-3 text-left text-sm text-slate-100 transition hover:bg-cyan-500/10 last:border-b-0"
               >
-                <span className="text-gray-700">{suggestion}</span>
+                <span className="text-cyan-100">{suggestion}</span>
               </button>
             ))}
           </div>
@@ -107,13 +107,16 @@ export default function SearchBar({ onSearch, loading, placeholder }: SearchBarP
       </form>
 
       {/* Search Tips */}
-      <div className="mt-4 text-sm text-gray-600">
-        <p className="mb-2">💡 <strong>Search Tips:</strong></p>
-        <ul className="list-disc list-inside space-y-1 ml-4">
-          <li>Use natural language: "How does microgravity affect muscle mass?"</li>
-          <li>Try specific terms: "bone density", "plant growth", "radiation effects"</li>
-          <li>Combine concepts: "microgravity bone loss weight-bearing"</li>
-          <li>Use filters to narrow results by organism, system, or exposure</li>
+      <div className="mt-6 rounded-xl border border-cyan-500/10 bg-slate-900/70 px-5 py-4 text-sm text-slate-200">
+        <p className="mb-3 flex items-center gap-2 text-cyan-200">
+          <span className="text-base">💡</span>
+          <span className="font-semibold uppercase tracking-[0.2em] text-cyan-100">Search tips</span>
+        </p>
+        <ul className="ml-4 space-y-2 text-slate-300">
+          <li>Use natural language: &ldquo;How does microgravity affect muscle mass?&rdquo;</li>
+          <li>Combine concepts and exposures: &ldquo;plant growth&rdquo; + &ldquo;radiation&rdquo;</li>
+          <li>Target systems: &ldquo;bone density&rdquo;, &ldquo;cardiovascular&rdquo;, &ldquo;immune response&rdquo;</li>
+          <li>Apply facets to orbit mission, organism, or assay to refine</li>
         </ul>
       </div>
     </div>
