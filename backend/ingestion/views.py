@@ -425,6 +425,30 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             if count > 0:
                 journal_facets.append({'name': journal, 'count': count})
         
+        # Get assay categories
+        assay_facets = []
+        assays = ['Microscopy', 'PCR', 'Western Blot', 'Flow Cytometry', 'ELISA', 'Immunofluorescence', 'RT-PCR', 'qPCR']
+        for assay in assays:
+            count = Study.objects.filter(
+                Q(title__icontains=assay) | 
+                Q(abstract__icontains=assay) |
+                Q(sections__content__icontains=assay)
+            ).distinct().count()
+            if count > 0:
+                assay_facets.append({'name': assay, 'count': count})
+        
+        # Get mission categories
+        mission_facets = []
+        missions = ['ISS', 'Space Shuttle', 'Ground Control', 'Parabolic Flight', 'Bed Rest', 'Antarctica', 'Mars Simulation']
+        for mission in missions:
+            count = Study.objects.filter(
+                Q(title__icontains=mission) | 
+                Q(abstract__icontains=mission) |
+                Q(sections__content__icontains=mission)
+            ).distinct().count()
+            if count > 0:
+                mission_facets.append({'name': mission, 'count': count})
+        
         # Entity types (when entities are populated)
         entity_types = Entity.objects.values('entity_type').annotate(count=Count('entity_type'))
         entity_facets = [{'name': et['entity_type'], 'count': et['count']} for et in entity_types if et['entity_type']]
@@ -436,6 +460,8 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             'model_organisms': model_organism_facets,
             'molecular': molecular_facets,
             'years': year_facets,
+            'assays': assay_facets,
+            'missions': mission_facets,
             'journals': journal_facets,
             'entity_types': entity_facets,
         })

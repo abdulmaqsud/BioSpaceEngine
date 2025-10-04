@@ -78,7 +78,7 @@ export default function FacetFilters({
       title: 'Assay',
       key: 'assay',
       selected: selectedAssay,
-      options: [
+      options: facets?.assays || [
         { name: 'Microscopy', count: 156 },
         { name: 'PCR', count: 89 },
         { name: 'Western Blot', count: 67 },
@@ -91,7 +91,7 @@ export default function FacetFilters({
       title: 'Mission',
       key: 'mission',
       selected: selectedMission,
-      options: [
+      options: facets?.missions || [
         { name: 'ISS', count: 234 },
         { name: 'Space Shuttle', count: 89 },
         { name: 'Ground Control', count: 156 },
