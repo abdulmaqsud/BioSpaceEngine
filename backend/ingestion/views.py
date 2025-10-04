@@ -76,14 +76,32 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
         # Build base queryset with filters
         studies_queryset = Study.objects.all()
         
-        # Apply filters with more flexible matching
+        # Apply filters with more specific matching
         if organism:
-            # Try exact match first, then partial match
-            organism_q = Q(title__icontains=organism) | Q(abstract__icontains=organism)
-            if studies_queryset.filter(organism_q).exists():
-                studies_queryset = studies_queryset.filter(organism_q)
+            # More specific organism matching
+            if organism.lower() == 'human':
+                studies_queryset = studies_queryset.filter(
+                    Q(title__icontains='human') | 
+                    Q(abstract__icontains='human') |
+                    Q(sections__content__icontains='human')
+                ).exclude(
+                    Q(title__icontains='mouse') | 
+                    Q(title__icontains='rat') | 
+                    Q(title__icontains='animal')
+                ).distinct()
+            elif organism.lower() == 'mouse':
+                studies_queryset = studies_queryset.filter(
+                    Q(title__icontains='mouse') | 
+                    Q(abstract__icontains='mouse') |
+                    Q(sections__content__icontains='mouse')
+                ).distinct()
+            elif organism.lower() == 'plant':
+                studies_queryset = studies_queryset.filter(
+                    Q(title__icontains='plant') | 
+                    Q(abstract__icontains='plant') |
+                    Q(sections__content__icontains='plant')
+                ).distinct()
             else:
-                # Try more flexible matching
                 studies_queryset = studies_queryset.filter(
                     Q(title__icontains=organism.lower()) | 
                     Q(abstract__icontains=organism.lower()) |
@@ -91,9 +109,19 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 ).distinct()
         
         if exposure:
-            exposure_q = Q(title__icontains=exposure) | Q(abstract__icontains=exposure)
-            if studies_queryset.filter(exposure_q).exists():
-                studies_queryset = studies_queryset.filter(exposure_q)
+            # More specific exposure matching
+            if exposure.lower() == 'microgravity':
+                studies_queryset = studies_queryset.filter(
+                    Q(title__icontains='microgravity') | 
+                    Q(abstract__icontains='microgravity') |
+                    Q(sections__content__icontains='microgravity')
+                ).distinct()
+            elif exposure.lower() == 'radiation':
+                studies_queryset = studies_queryset.filter(
+                    Q(title__icontains='radiation') | 
+                    Q(abstract__icontains='radiation') |
+                    Q(sections__content__icontains='radiation')
+                ).distinct()
             else:
                 studies_queryset = studies_queryset.filter(
                     Q(title__icontains=exposure.lower()) | 
@@ -102,9 +130,19 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 ).distinct()
         
         if system:
-            system_q = Q(title__icontains=system) | Q(abstract__icontains=system)
-            if studies_queryset.filter(system_q).exists():
-                studies_queryset = studies_queryset.filter(system_q)
+            # More specific system matching
+            if system.lower() == 'bone':
+                studies_queryset = studies_queryset.filter(
+                    Q(title__icontains='bone') | 
+                    Q(abstract__icontains='bone') |
+                    Q(sections__content__icontains='bone')
+                ).distinct()
+            elif system.lower() == 'muscle':
+                studies_queryset = studies_queryset.filter(
+                    Q(title__icontains='muscle') | 
+                    Q(abstract__icontains='muscle') |
+                    Q(sections__content__icontains='muscle')
+                ).distinct()
             else:
                 studies_queryset = studies_queryset.filter(
                     Q(title__icontains=system.lower()) | 
@@ -135,8 +173,9 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             ).distinct()
 
         if not query:
-            # If no query, return filtered studies
-            studies = studies_queryset[:limit]
+            # If no query, return filtered studies with a reasonable limit
+            max_results = min(limit, 100)  # Cap at 100 results for filter-only searches
+            studies = studies_queryset[:max_results]
             results = []
             for study in studies:
                 result = {
