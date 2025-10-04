@@ -1,14 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { apiService, Study, SearchResult, FacetsResponse } from '../../lib/api';
-
-// Dynamically import components to prevent SSR issues
-const SearchBar = dynamic(() => import('../../components/explore/SearchBar'), { ssr: false });
-const FacetFilters = dynamic(() => import('../../components/explore/FacetFilters'), { ssr: false });
-const ResultCards = dynamic(() => import('../../components/explore/ResultCards'), { ssr: false });
-const CoverageMeter = dynamic(() => import('../../components/explore/CoverageMeter'), { ssr: false });
+import SearchBar from '../../components/explore/SearchBar';
+import FacetFilters from '../../components/explore/FacetFilters';
+import ResultCards from '../../components/explore/ResultCards';
+import CoverageMeter from '../../components/explore/CoverageMeter';
+import ClientOnly from '../../components/ClientOnly';
 
 export default function ExplorePage() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
