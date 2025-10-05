@@ -1,51 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
+const COMMON_QUERIES = [
+  'microgravity effects on bone loss',
+  'plant growth in space',
+  'muscle atrophy spaceflight',
+  'radiation effects on organisms',
+  'bone density microgravity',
+  'cardiovascular changes space',
+  'immune system space',
+  'cell division microgravity',
+  'protein synthesis space',
+  'gene expression microgravity'
+];
 
 interface SearchBarProps {
+  query: string;
+  onQueryChange: (value: string) => void;
   onSearch: (query: string) => void;
   loading: boolean;
   placeholder?: string;
 }
 
-export default function SearchBar({ onSearch, loading, placeholder }: SearchBarProps) {
-  const [query, setQuery] = useState('');
+export default function SearchBar({
+  query,
+  onQueryChange,
+  onSearch,
+  loading,
+  placeholder,
+}: SearchBarProps) {
+  const [internalQuery, setInternalQuery] = useState(query ?? '');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const commonQueries = [
-    'microgravity effects on bone loss',
-    'plant growth in space',
-    'muscle atrophy spaceflight',
-    'radiation effects on organisms',
-    'bone density microgravity',
-    'cardiovascular changes space',
-    'immune system space',
-    'cell division microgravity',
-    'protein synthesis space',
-    'gene expression microgravity'
-  ];
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      onSearch(query.trim());
-      setShowSuggestions(false);
-    }
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setQuery(suggestion);
-    onSearch(suggestion);
-    setShowSuggestions(false);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-    
+  const updateSuggestions = useCallback((value: string) => {
     if (value.length > 2) {
-      const filtered = commonQueries.filter(q => 
+      const filtered = COMMON_QUERIES.filter(q =>
         q.toLowerCase().includes(value.toLowerCase())
       );
       setSuggestions(filtered.slice(0, 5));
@@ -54,6 +45,36 @@ export default function SearchBar({ onSearch, loading, placeholder }: SearchBarP
       setSuggestions([]);
       setShowSuggestions(false);
     }
+  }, []);
+
+  useEffect(() => {
+    setInternalQuery(query ?? '');
+    updateSuggestions(query ?? '');
+  }, [query, updateSuggestions]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = internalQuery.trim();
+    if (trimmed) {
+      setInternalQuery(trimmed);
+      onQueryChange(trimmed);
+      onSearch(trimmed);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setInternalQuery(suggestion);
+    onQueryChange(suggestion);
+    onSearch(suggestion);
+    setShowSuggestions(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInternalQuery(value);
+    onQueryChange(value);
+    updateSuggestions(value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -68,10 +89,10 @@ export default function SearchBar({ onSearch, loading, placeholder }: SearchBarP
         <div className="relative">
           <input
             type="text"
-            value={query}
+            value={internalQuery}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            onFocus={() => query.length > 2 && setShowSuggestions(true)}
+            onFocus={() => internalQuery.length > 2 && setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             placeholder={placeholder || "Search NASA Space Biology research..."}
             className="w-full rounded-2xl border border-cyan-500/20 bg-slate-900/60 px-6 py-5 text-lg text-slate-100 shadow-[0_0_25px_rgba(8,47,73,0.25)] outline-none transition focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-400/40"
@@ -79,7 +100,7 @@ export default function SearchBar({ onSearch, loading, placeholder }: SearchBarP
           />
           <button
             type="submit"
-            disabled={loading || !query.trim()}
+            disabled={loading || !internalQuery.trim()}
             className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2 rounded-xl border border-cyan-300/30 bg-cyan-500/20 px-5 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-100 transition hover:border-cyan-200/60 hover:text-white disabled:border-slate-600 disabled:text-slate-400"
           >
             {loading ? (
