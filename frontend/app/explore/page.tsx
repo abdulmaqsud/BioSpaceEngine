@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { apiService, SearchResult, FacetsResponse } from '../../lib/api';
 import SearchBar from '../../components/explore/SearchBar';
 import FacetFilters from '../../components/explore/FacetFilters';
@@ -9,9 +10,13 @@ import CoverageMeter from '../../components/explore/CoverageMeter';
 import Link from 'next/link';
 
 export default function ExplorePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [query, setQuery] = useState('');
+  const [inputQuery, setInputQuery] = useState('');
+  const [activeQuery, setActiveQuery] = useState('');
   const [facets, setFacets] = useState<FacetsResponse | null>(null);
   const [totalStudies] = useState(572);
   const [fullTextCount] = useState(571);
@@ -40,30 +45,19 @@ export default function ExplorePage() {
     }
   };
 
-  const handleSearch = async (searchQuery: string) => {
-    setQuery(searchQuery);
-    setLoading(true);
-    
-    try {
-      const filters = {
-        organism: selectedOrganism,
-        exposure: selectedExposure,
-        system: selectedSystem,
-        year: selectedYear,
-        assay: selectedAssay,
-        mission: selectedMission,
-        model_organism: selectedModelOrganism,
-        molecular: selectedMolecular,
-      };
-      
-      const response = await apiService.searchStudies(searchQuery, 50, 0.3, filters);
-      setSearchResults(response.results);
-    } catch (error) {
-      console.error('Search failed:', error);
-      setSearchResults([]);
-    } finally {
-      setLoading(false);
+  const handleSearch = (searchQuery: string) => {
+    const trimmed = searchQuery.trim();
+
+    if (trimmed.length === 0) {
+      router.push('/explore');
+      setActiveQuery('');
+      setInputQuery('');
+      return;
     }
+
+    setInputQuery(trimmed);
+    setActiveQuery(trimmed);
+    router.push(`/explore?q=${encodeURIComponent(trimmed)}`);
   };
 
   const handleFacetChange = (facetType: string, value: string) => {
@@ -93,11 +87,6 @@ export default function ExplorePage() {
         setSelectedMolecular(value);
         break;
     }
-    
-    // Auto-search when filters change
-    if (query) {
-      handleSearch(query);
-    }
   };
 
   const clearFilters = () => {
@@ -109,11 +98,6 @@ export default function ExplorePage() {
     setSelectedMission('');
     setSelectedModelOrganism('');
     setSelectedMolecular('');
-    
-    // Re-search with cleared filters
-    if (query) {
-      handleSearch(query);
-    }
   };
 
   const removeFilter = (filterValue: string) => {
@@ -137,38 +121,75 @@ export default function ExplorePage() {
     }
   };
 
-  // Auto-search when filters change (even without query)
+  const searchParamQuery = searchParams.get('q') ?? '';
+
   useEffect(() => {
-    const hasFilters = selectedOrganism || selectedExposure || selectedSystem || 
-                      selectedYear || selectedAssay || selectedMission ||
-                      selectedModelOrganism || selectedMolecular;
-    
-    if (hasFilters) {
-      const filters = {
-        organism: selectedOrganism,
-        exposure: selectedExposure,
-        system: selectedSystem,
-        year: selectedYear,
-        assay: selectedAssay,
-        mission: selectedMission,
-        model_organism: selectedModelOrganism,
-        molecular: selectedMolecular,
-      };
-      
-      setLoading(true);
-      apiService.searchStudies(query || '', 50, 0.3, filters)
-        .then(response => {
-          setSearchResults(response.results);
-        })
-        .catch(error => {
-          console.error('Filter search failed:', error);
-          setSearchResults([]);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+    const trimmedParam = searchParamQuery.trim();
+
+    if (trimmedParam.length > 0) {
+      if (trimmedParam !== activeQuery) {
+        setActiveQuery(trimmedParam);
+      }
+      if (trimmedParam !== inputQuery) {
+        setInputQuery(trimmedParam);
+      }
+    } else {
+      if (activeQuery !== '') {
+        setActiveQuery('');
+      }
+      if (inputQuery !== '') {
+        setInputQuery('');
+      }
     }
-  }, [selectedOrganism, selectedExposure, selectedSystem, selectedYear, selectedAssay, selectedMission, selectedModelOrganism, selectedMolecular, query]);
+  }, [searchParamQuery, activeQuery, inputQuery]);
+
+  useEffect(() => {
+    const trimmedQuery = activeQuery.trim();
+    const filters = {
+      organism: selectedOrganism || undefined,
+      exposure: selectedExposure || undefined,
+      system: selectedSystem || undefined,
+      year: selectedYear || undefined,
+      assay: selectedAssay || undefined,
+      mission: selectedMission || undefined,
+      model_organism: selectedModelOrganism || undefined,
+      molecular: selectedMolecular || undefined,
+    };
+
+    const hasFilters = Object.values(filters).some(Boolean);
+
+    if (!trimmedQuery && !hasFilters) {
+      setSearchResults([]);
+      setLoading(false);
+      return;
+    }
+
+    let isCancelled = false;
+    setLoading(true);
+
+    apiService
+      .searchStudies(trimmedQuery, 50, 0.3, filters)
+      .then((response) => {
+        if (!isCancelled) {
+          setSearchResults(response.results);
+        }
+      })
+      .catch((error) => {
+        if (!isCancelled) {
+          console.error('Search failed:', error);
+          setSearchResults([]);
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeQuery, selectedOrganism, selectedExposure, selectedSystem, selectedYear, selectedAssay, selectedMission, selectedModelOrganism, selectedMolecular]);
 
   const activeFilters = [
     selectedOrganism,
@@ -257,6 +278,8 @@ export default function ExplorePage() {
           <div className="lg:col-span-3 space-y-6">
             {/* Search Bar */}
             <SearchBar
+              query={inputQuery}
+              onQueryChange={setInputQuery}
               onSearch={handleSearch}
               loading={loading}
               placeholder="Search for: 'microgravity bone loss', 'plant growth space', 'muscle atrophy'..."
@@ -305,7 +328,7 @@ export default function ExplorePage() {
             <ResultCards
               results={searchResults}
               loading={loading}
-              query={query}
+              query={activeQuery}
             />
           </div>
         </div>

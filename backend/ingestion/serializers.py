@@ -69,4 +69,35 @@ class FacetSerializer(serializers.Serializer):
     """Serializer for filter facets"""
     name = serializers.CharField()
     count = serializers.IntegerField()
-    type = serializers.CharField()
+    type = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+
+class FacetsResponseSerializer(serializers.Serializer):
+    """Aggregated facet buckets used by the search UI"""
+    total_studies = serializers.IntegerField()
+    organisms = FacetSerializer(many=True)
+    exposures = FacetSerializer(many=True)
+    systems = FacetSerializer(many=True)
+    model_organisms = FacetSerializer(many=True)
+    molecular = FacetSerializer(many=True)
+    years = FacetSerializer(many=True)
+    assays = FacetSerializer(many=True)
+    missions = FacetSerializer(many=True)
+    journals = FacetSerializer(many=True)
+    entity_types = FacetSerializer(many=True)
+
+
+class SearchResponseSerializer(serializers.Serializer):
+    """Top-level serializer for study search responses"""
+    results = SearchResultSerializer(many=True)
+    total = serializers.IntegerField()
+    query = serializers.CharField()
+    search_type = serializers.ChoiceField(choices=['semantic', 'text', 'filtered'])
+
+
+class StudyDebugSerializer(serializers.Serializer):
+    """Payload returned by the debug endpoint"""
+    total_studies = serializers.IntegerField()
+    studies_with_year = serializers.IntegerField()
+    sample_years = serializers.ListField(child=serializers.IntegerField(), allow_empty=True)
+    year_field_type = serializers.CharField()
