@@ -1,7 +1,7 @@
 import spacy
 import re
 from django.core.management.base import BaseCommand, CommandError
-from ingestion.models import Study, Section, Entity, EvidenceSentence
+from ingestion.models import Study, Section, Entity, EvidenceSentence, EntityOccurrence
 
 
 class Command(BaseCommand):
@@ -78,6 +78,26 @@ class Command(BaseCommand):
                     
                     if created:
                         entities_created += 1
+
+                    start_char = entity_data.get('start')
+                    end_char = entity_data.get('end')
+                    occurrence_exists = EntityOccurrence.objects.filter(
+                        entity=entity,
+                        study=study,
+                        section=section,
+                        start_char=start_char,
+                        end_char=end_char,
+                    ).exists()
+
+                    if not occurrence_exists:
+                        EntityOccurrence.objects.create(
+                            entity=entity,
+                            study=study,
+                            section=section,
+                            start_char=start_char,
+                            end_char=end_char,
+                            source='nlp',
+                        )
         
         self.stdout.write(
             self.style.SUCCESS(

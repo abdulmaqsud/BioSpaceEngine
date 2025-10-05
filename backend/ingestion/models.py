@@ -11,6 +11,7 @@ class Study(models.Model):
     pmcid = models.CharField(max_length=50, unique=True)
     pmc_url = models.URLField()
     abstract = models.TextField(blank=True)
+    summary = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -91,6 +92,36 @@ class Entity(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.entity_type})"
+
+
+class EntityOccurrence(models.Model):
+    """Occurrences of an entity within a specific study and context."""
+
+    entity = models.ForeignKey(Entity, on_delete=models.CASCADE, related_name="occurrences")
+    study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name="entity_occurrences")
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="entity_occurrences", null=True, blank=True)
+    evidence_sentence = models.ForeignKey(
+        EvidenceSentence,
+        on_delete=models.SET_NULL,
+        related_name="entity_occurrences",
+        null=True,
+        blank=True,
+    )
+    start_char = models.IntegerField(null=True, blank=True)
+    end_char = models.IntegerField(null=True, blank=True)
+    source = models.CharField(max_length=50, default="nlp")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["study", "entity", "start_char"]
+        indexes = [
+            models.Index(fields=["study", "entity"]),
+            models.Index(fields=["entity", "section"]),
+        ]
+
+    def __str__(self):
+        section_label = self.section.section_type if self.section else "unknown"
+        return f"{self.entity.name} in {self.study.pmcid} ({section_label})"
 
 
 class Triple(models.Model):

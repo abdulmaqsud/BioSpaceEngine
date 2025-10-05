@@ -37,10 +37,12 @@ type RawTriple = {
 	id: number;
 	subject?: string;
 	subject_name?: string;
+	subject_id?: number;
 	predicate?: string;
 	relation?: string;
 	object?: string;
 	object_name?: string;
+	object_id?: number;
 	study_title?: string;
 	study?: string;
 	confidence?: number;
@@ -91,12 +93,15 @@ export interface Entity {
 	study?: number;
 	start_char?: number | null;
 	end_char?: number | null;
+	occurrence_count?: number;
 }
 
 export interface Triple {
 	id: number;
+	subject_id?: number;
 	subject: string;
 	predicate: string;
+	object_id?: number;
 	object: string;
 	study_title?: string;
 	confidence?: number;
@@ -107,6 +112,25 @@ export interface SearchResult {
 	study: Study;
 	evidence_sentences: EvidenceSentence[];
 	relevance_score: number;
+}
+
+export interface EntityOccurrence {
+	id: number;
+	study_id: number;
+	entity: Entity;
+	section_title?: string | null;
+	section_type?: string | null;
+	start_char?: number | null;
+	end_char?: number | null;
+	evidence_id?: number | null;
+	source?: string;
+}
+
+export interface StudyEntitiesResponse {
+	study_id: number;
+	total_entities: number;
+	entities: Entity[];
+	occurrences: EntityOccurrence[];
 }
 
 export type SearchType = 'semantic' | 'text' | 'filtered';
@@ -235,7 +259,7 @@ function parseQualifiers(value: unknown): Record<string, unknown> | null {
 }
 
 function normalizeEntity(raw: RawEntity): Entity {
-	return {
+	const entity: Entity = {
 		id: raw.id,
 		name: raw.name ?? raw.text ?? undefined,
 		text: raw.text ?? raw.name ?? undefined,
@@ -246,13 +270,20 @@ function normalizeEntity(raw: RawEntity): Entity {
 		start_char: raw.start_char ?? raw.start ?? null,
 		end_char: raw.end_char ?? raw.end ?? null,
 	};
+	const maybeCount = (raw as Record<string, unknown>)['occurrence_count'];
+	if (typeof maybeCount === 'number') {
+		entity.occurrence_count = maybeCount;
+	}
+	return entity;
 }
 
 function normalizeTriple(raw: RawTriple): Triple {
 	return {
 		id: raw.id,
+		subject_id: (raw as Record<string, unknown>)['subject_id'] as number | undefined,
 		subject: raw.subject ?? raw.subject_name ?? '',
 		predicate: raw.predicate ?? raw.relation ?? '',
+		object_id: (raw as Record<string, unknown>)['object_id'] as number | undefined,
 		object: raw.object ?? raw.object_name ?? '',
 		study_title: raw.study_title ?? raw.study ?? undefined,
 		confidence: typeof raw.confidence === 'number' ? raw.confidence : undefined,
@@ -365,22 +396,29 @@ const apiService = {
 	},
 
 		async getEntities(params: Record<string, QueryParamValue> = {}): Promise<Entity[]> {
-		const url = buildUrl('/entities/', params);
+			const url = buildUrl('/entities/', params);
 			const entities = await fetchJson<RawEntity[]>(url);
-			return Array.isArray(entities) ? entities.map(normalizeEntity) : [];
+			return Array.isArray(entities)
+				? entities.map((raw) => {
+					const normalized = normalizeEntity(raw);
+					const count = (raw as Record<string, unknown>)['occurrence_count'];
+					if (typeof count === 'number') {
+						normalized.occurrence_count = count;
+					}
+					return normalized;
+				})
+				: [];
 	},
 
-	async getStudyEntities(studyId: number | string): Promise<Entity[]> {
-		// Get entities through triples for a specific study
-		const triples = await this.getTriples({ study_id: studyId });
-		// Extract unique entity IDs from triples
-		for (const triple of triples) {
-			// We need to get entity IDs from triples, but the current API doesn't return them
-			// For now, return empty array until we fix the backend
-			return [];
-		}
-
-		return [];
+		async getStudyEntities(studyId: number | string): Promise<StudyEntitiesResponse> {
+			const url = buildUrl(`/studies/${studyId}/entities/`);
+			const response = await fetchJson<StudyEntitiesResponse>(url);
+			return {
+				study_id: response.study_id,
+				total_entities: response.total_entities ?? response.entities?.length ?? 0,
+				entities: Array.isArray(response.entities) ? response.entities : [],
+				occurrences: Array.isArray(response.occurrences) ? response.occurrences : [],
+			};
 	},
 
 		async getTriples(params: Record<string, QueryParamValue> = {}): Promise<Triple[]> {

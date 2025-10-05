@@ -1,3 +1,5 @@
+import re
+
 from django.db.models import Q, Count
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -10,7 +12,7 @@ from drf_spectacular.utils import (  # type: ignore[import]
     extend_schema_view,
 )
 
-from .models import Entity, EvidenceSentence, Section, Study, Triple
+from .models import Entity, EntityOccurrence, EvidenceSentence, Section, Study, Triple
 from .serializers import (
     EntitySerializer,
     EvidenceSentenceSerializer,
@@ -18,8 +20,11 @@ from .serializers import (
     SearchResponseSerializer,
     SectionSerializer,
     StudyDebugSerializer,
+    StudyEntitiesResponseSerializer,
+    StudySummarySerializer,
     StudySerializer,
     TripleSerializer,
+    EntityOccurrenceSerializer,
 )
 from .services import semantic_search
 
@@ -486,6 +491,88 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
     @extend_schema(
+        summary="List entities for a study",
+        description="Return extracted entities and their occurrences for the selected study.",
+        responses=StudyEntitiesResponseSerializer,
+    )
+    @action(detail=True, methods=["get"], url_path="entities")
+    def study_entities(self, request, pk=None):
+        study = self.get_object()
+        entities = (
+            Entity.objects.filter(occurrences__study=study)
+            .annotate(occurrence_count=Count("occurrences"))
+            .order_by("-occurrence_count", "name")
+        )
+        occurrences = (
+            EntityOccurrence.objects.filter(study=study)
+            .select_related("entity", "section")
+            .order_by("section__order", "entity__name")
+        )
+        payload = {
+            "study_id": study.id,
+            "total_entities": entities.count(),
+            "entities": EntitySerializer(entities, many=True).data,
+            "occurrences": EntityOccurrenceSerializer(occurrences, many=True).data,
+        }
+        serializer = StudyEntitiesResponseSerializer(payload)
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="Retrieve study summary",
+        description="Return the stored summary for the study, or generate a fallback summary on demand.",
+        responses=StudySummarySerializer,
+    )
+    @action(detail=True, methods=["get"], url_path="summary")
+    def summary(self, request, pk=None):
+        study = self.get_object()
+        summary_text = (study.summary or "").strip()
+        generated = False
+
+        if not summary_text:
+            summary_text = self._generate_fallback_summary(study)
+            generated = True
+
+        serializer = StudySummarySerializer(
+            {
+                "study_id": study.id,
+                "summary": summary_text,
+                "generated": generated,
+            }
+        )
+        return Response(serializer.data)
+
+    def _generate_fallback_summary(self, study):
+        sentences = []
+
+        if study.abstract:
+            sentences.extend(self._split_sentences(study.abstract)[:3])
+
+        if len(sentences) < 3:
+            key_sections = study.sections.filter(
+                section_type__in=["results", "discussion", "conclusions"],
+            ).order_by("order")
+            for section in key_sections:
+                sentences.extend(self._split_sentences(section.content)[:2])
+                if len(sentences) >= 4:
+                    break
+
+        if not sentences and study.title:
+            sentences.append(study.title.strip())
+
+        if not sentences:
+            return "Summary unavailable."
+
+        summary = " ".join(sentences[:4])
+        return re.sub(r"\s+", " ", summary).strip()
+
+    @staticmethod
+    def _split_sentences(text):
+        if not text:
+            return []
+        parts = re.split(r"(?<=[.!?])\s+", text.strip())
+        return [part.strip() for part in parts if len(part.strip()) > 20]
+
+    @extend_schema(
         summary="List available search facets",
         description="Return aggregated counts that drive the search filter UI.",
         responses=FacetsResponseSerializer,
@@ -494,19 +581,10 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
     def facets(self, request):
         params = request.query_params
 
-        filtered_queryset = self._apply_advanced_filters(
-            self._apply_basic_filters(Study.objects.all(), params),
-            params,
-        ).distinct()
+        params_dict = {key: params.get(key) for key in params.keys()}
 
         query_param = params.get("query", "")
         query_value = query_param.strip() if query_param else ""
-        if query_value:
-            filtered_queryset = filtered_queryset.filter(
-                Q(title__icontains=query_value)
-                | Q(abstract__icontains=query_value)
-                | Q(sections__content__icontains=query_value)
-            ).distinct()
 
         def has_value(raw):
             return raw is not None and str(raw).strip() != ""
@@ -529,62 +607,35 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
 
         include_zero_counts = any(has_value(params.get(key)) for key in filter_keys)
 
-        studies = list(
-            filtered_queryset.prefetch_related("sections").only(
-                "id", "title", "abstract", "journal", "year"
-            )
-        )
+        base_queryset = self._apply_basic_filters(Study.objects.all(), params_dict)
 
-        study_index = []
-        for study in studies:
-            parts = [
-                study.title or "",
-                study.abstract or "",
-                study.journal or "",
-            ]
-            parts.extend(section.content or "" for section in study.sections.all())
-            combined_text = " ".join(parts).lower()
-            study_index.append(
-                {
-                    "id": study.id,
-                    "year": study.year,
-                    "text": combined_text,
-                }
-            )
+        def apply_filters(extra_params: dict[str, str | None]):
+            combined_params = params_dict.copy()
+            combined_params.update(extra_params)
+            qs = self._apply_advanced_filters(base_queryset, combined_params).distinct()
+            if query_value:
+                qs = qs.filter(
+                    Q(title__icontains=query_value)
+                    | Q(abstract__icontains=query_value)
+                    | Q(sections__content__icontains=query_value)
+                ).distinct()
+            return qs
 
-        total_studies = len(study_index)
-        study_ids = [entry["id"] for entry in study_index]
+        filtered_queryset = apply_filters({})
+
+        total_studies = filtered_queryset.count()
+        study_ids = list(filtered_queryset.values_list("id", flat=True))
+
+        def count_with_params(extra_params: dict[str, str | None]) -> int:
+            return apply_filters(extra_params).count()
 
         def append_facet(collection, name, count):
             if count > 0 or include_zero_counts:
                 collection.append({"name": name, "count": count})
 
-        def count_keyword(keyword):
-            lookup = keyword.lower()
-            return sum(1 for entry in study_index if lookup in entry["text"])
-
         organism_facets = []
-
-        def contains(text: str, needle: str) -> bool:
-            return needle in text
-
-        human_count = sum(
-            1
-            for entry in study_index
-            if contains(entry["text"], "human")
-            and not (
-                contains(entry["text"], "mouse")
-                or contains(entry["text"], "rat")
-                or contains(entry["text"], "animal")
-            )
-        )
-        append_facet(organism_facets, "Human", human_count)
-
-        mouse_count = sum(1 for entry in study_index if contains(entry["text"], "mouse"))
-        append_facet(organism_facets, "Mouse", mouse_count)
-
-        for organism in ["Rat", "Plant", "Bacteria", "Other"]:
-            count = count_keyword(organism)
+        for organism in ["Human", "Mouse", "Rat", "Plant", "Bacteria", "Other"]:
+            count = count_with_params({"organism": organism})
             append_facet(organism_facets, organism, count)
 
         exposure_facets = []
@@ -598,7 +649,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Gravity",
         ]
         for exposure in exposures:
-            count = count_keyword(exposure)
+            count = count_with_params({"exposure": exposure})
             append_facet(exposure_facets, exposure, count)
 
         system_facets = []
@@ -613,7 +664,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Tissue",
         ]
         for system in systems:
-            count = count_keyword(system)
+            count = count_with_params({"system": system})
             append_facet(system_facets, system, count)
 
         model_organism_facets = []
@@ -626,10 +677,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Human",
         ]
         for organism in model_organisms:
-            if organism.lower() == "human":
-                count = human_count
-            else:
-                count = count_keyword(organism)
+            count = count_with_params({"model_organism": organism})
             append_facet(model_organism_facets, organism, count)
 
         molecular_facets = []
@@ -644,19 +692,12 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Proteomics",
         ]
         for term in molecular_terms:
-            count = count_keyword(term)
+            count = count_with_params({"molecular": term})
             append_facet(molecular_facets, term, count)
 
         year_facets = []
         for year in range(2024, 1990, -1):
-            count = sum(1 for entry in study_index if entry["year"] == year)
-            if count == 0:
-                year_str = str(year)
-                count = sum(
-                    1
-                    for entry in study_index
-                    if year_str in entry["text"]
-                )
+            count = count_with_params({"year": str(year)})
             append_facet(year_facets, str(year), count)
 
         journal_facets = []
@@ -671,7 +712,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Scientific Reports",
         ]
         for journal in journals:
-            count = count_keyword(journal)
+            count = count_with_params({"journal": journal})
             append_facet(journal_facets, journal, count)
 
         assay_facets = []
@@ -685,7 +726,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Mass Spectrometry",
         ]
         for assay in assays:
-            count = count_keyword(assay)
+            count = count_with_params({"assay": assay})
             append_facet(assay_facets, assay, count)
 
         mission_facets = []
@@ -700,7 +741,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Station",
         ]
         for mission in missions:
-            count = count_keyword(mission)
+            count = count_with_params({"mission": mission})
             append_facet(mission_facets, mission, count)
 
         entity_types = (
@@ -875,7 +916,7 @@ class EntityViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = EntitySerializer
 
     def get_queryset(self):
-        queryset = Entity.objects.all()
+        queryset = Entity.objects.all().annotate(occurrence_count=Count("occurrences"))
         entity_type = self.request.query_params.get("entity_type")
         if entity_type:
             queryset = queryset.filter(entity_type=entity_type)

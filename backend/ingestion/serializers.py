@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import Study, Section, EvidenceSentence, Entity, Triple
+from .models import (
+    Study,
+    Section,
+    EvidenceSentence,
+    Entity,
+    EntityOccurrence,
+    Triple,
+)
 
 
 class StudySerializer(serializers.ModelSerializer):
@@ -8,8 +15,8 @@ class StudySerializer(serializers.ModelSerializer):
     class Meta:
         model = Study
         fields = [
-            'id', 'title', 'authors', 'year', 'journal', 
-            'pmcid', 'pmc_url', 'abstract', 'sections_count',
+            'id', 'title', 'authors', 'year', 'journal',
+            'pmcid', 'pmc_url', 'abstract', 'summary', 'sections_count',
             'created_at', 'updated_at'
         ]
     
@@ -38,10 +45,33 @@ class EvidenceSentenceSerializer(serializers.ModelSerializer):
 
 
 class EntitySerializer(serializers.ModelSerializer):
+    occurrence_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Entity
         fields = [
-            'id', 'name', 'entity_type', 'canonical_id', 'description'
+            'id', 'name', 'entity_type', 'canonical_id', 'description', 'occurrence_count'
+        ]
+
+    def get_occurrence_count(self, obj):
+        count = getattr(obj, 'occurrence_count', None)
+        if count is None:
+            return obj.occurrences.count() if hasattr(obj, 'occurrences') else 0
+        return count
+
+
+class EntityOccurrenceSerializer(serializers.ModelSerializer):
+    entity = EntitySerializer(read_only=True)
+    section_title = serializers.CharField(source='section.title', read_only=True)
+    section_type = serializers.CharField(source='section.section_type', read_only=True)
+    evidence_id = serializers.IntegerField(source='evidence_sentence_id', read_only=True)
+    study_id = serializers.IntegerField(source='study_id', read_only=True)
+
+    class Meta:
+        model = EntityOccurrence
+        fields = [
+            'id', 'study_id', 'entity', 'section_title', 'section_type', 'start_char', 'end_char',
+            'evidence_id', 'source'
         ]
 
 
@@ -49,11 +79,13 @@ class TripleSerializer(serializers.ModelSerializer):
     subject_name = serializers.CharField(source='subject_entity.name', read_only=True)
     object_name = serializers.CharField(source='object_entity.name', read_only=True)
     study_title = serializers.CharField(source='study.title', read_only=True)
+    subject_id = serializers.IntegerField(source='subject_entity_id', read_only=True)
+    object_id = serializers.IntegerField(source='object_entity_id', read_only=True)
     
     class Meta:
         model = Triple
         fields = [
-            'id', 'subject_name', 'relation', 'object_name', 
+            'id', 'subject_id', 'subject_name', 'relation', 'object_id', 'object_name',
             'study_title', 'confidence', 'qualifiers'
         ]
 
@@ -101,3 +133,20 @@ class StudyDebugSerializer(serializers.Serializer):
     studies_with_year = serializers.IntegerField()
     sample_years = serializers.ListField(child=serializers.IntegerField(), allow_empty=True)
     year_field_type = serializers.CharField()
+
+
+class StudySummarySerializer(serializers.Serializer):
+    """Serializer for study summary responses"""
+
+    study_id = serializers.IntegerField()
+    summary = serializers.CharField()
+    generated = serializers.BooleanField()
+
+
+class StudyEntitiesResponseSerializer(serializers.Serializer):
+    """Serializer for study-level entity listings"""
+
+    study_id = serializers.IntegerField()
+    total_entities = serializers.IntegerField()
+    entities = EntitySerializer(many=True)
+    occurrences = EntityOccurrenceSerializer(many=True)

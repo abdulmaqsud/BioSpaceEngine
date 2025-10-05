@@ -1,28 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiService } from '../../lib/api';
+import { apiService, Entity as ApiEntity, Triple as ApiTriple } from '../../lib/api';
 import Link from 'next/link';
-import KnowledgeGraph from '../../components/KnowledgeGraph';
-
-type GraphEntity = {
-  id: number;
-  text: string;
-  entity_type: string;
-  study: number | null;
-};
-
-type GraphTriple = {
-  id: number;
-  subject: string;
-  predicate: string;
-  object: string;
-};
+import KnowledgeGraph, { GraphEntityNode, GraphTriple } from '../../components/KnowledgeGraph';
 
 export default function GraphPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [entities, setEntities] = useState<GraphEntity[]>([]);
+  const [entities, setEntities] = useState<GraphEntityNode[]>([]);
   const [triples, setTriples] = useState<GraphTriple[]>([]);
 
   useEffect(() => {
@@ -39,21 +25,24 @@ export default function GraphPage() {
       ]);
 
       const sanitizedEntities = entitiesData
-        .filter((entity) => Boolean(entity.text || entity.name))
-        .map<GraphEntity>((entity) => ({
+        .filter((entity: ApiEntity) => Boolean(entity.text || entity.name))
+        .map<GraphEntityNode>((entity: ApiEntity) => ({
           id: entity.id,
-          text: entity.text ?? entity.name ?? `Entity-${entity.id}`,
+          label: entity.text ?? entity.name ?? `Entity-${entity.id}`,
           entity_type: entity.entity_type ?? 'unknown',
-          study: entity.study ?? null,
+          occurrence_count: entity.occurrence_count,
+          study_id: entity.study ?? null,
         }));
 
       const sanitizedTriples = triplesData
-        .filter((triple) => Boolean(triple.subject && triple.predicate && triple.object))
-        .map<GraphTriple>((triple) => ({
+        .filter((triple: ApiTriple) => Boolean(triple.subject && triple.predicate && triple.object))
+        .map<GraphTriple>((triple: ApiTriple) => ({
           id: triple.id,
           subject: triple.subject || 'unknown_subject',
           predicate: triple.predicate || 'related_to',
           object: triple.object || 'unknown_object',
+          subject_id: triple.subject_id,
+          object_id: triple.object_id,
         }));
 
       setEntities(sanitizedEntities);
@@ -112,18 +101,15 @@ export default function GraphPage() {
 
   const uniqueEntityTypes = Object.keys(entityTypeCounts).length;
   const uniqueStudiesWithEntities = new Set(
-    entities.filter((entity) => entity.study !== null).map((entity) => entity.study as number),
+    entities
+      .filter((entity) => entity.study_id !== null && entity.study_id !== undefined)
+      .map((entity) => entity.study_id as number),
   ).size;
   const relationshipTypes = Object.keys(relationshipCounts).length;
   const uniqueGraphEntities = new Set([
     ...triples.map((t) => t.subject),
     ...triples.map((t) => t.object),
   ]).size;
-
-  const graphEntitiesForVisualization = entities.map((entity) => ({
-    ...entity,
-    study: entity.study ?? 0,
-  }));
 
   return (
     <div className="relative min-h-screen pb-24 text-slate-100">
@@ -160,7 +146,7 @@ export default function GraphPage() {
         {/* Main Content */}
         <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-2xl border border-cyan-400/15 bg-slate-950/70 p-6 shadow-[0_0_35px_rgba(15,60,130,0.3)]">
-            <KnowledgeGraph entities={graphEntitiesForVisualization} triples={triples} />
+            <KnowledgeGraph entities={entities} triples={triples} />
           </div>
 
           {/* Current Data Preview */}
@@ -245,16 +231,16 @@ export default function GraphPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {entities.slice(0, 9).map((entity) => (
                   <div
-                    key={`${entity.id}-${entity.text}`}
+                    key={`${entity.id}-${entity.label}`}
                     className="rounded-xl border border-cyan-400/20 bg-slate-900/60 p-3 text-sm text-slate-200 shadow-[0_0_20px_rgba(34,211,238,0.2)]"
                   >
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="font-semibold text-cyan-100">{entity.text}</span>
+                      <span className="font-semibold text-cyan-100">{entity.label}</span>
                       <span className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2 py-1 text-[11px] uppercase tracking-[0.25em] text-cyan-100">
                         {entity.entity_type}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400">Study: {entity.study ?? 'N/A'}</p>
+                    <p className="text-xs text-slate-400">Study: {entity.study_id ?? 'N/A'}</p>
                   </div>
                 ))}
               </div>
