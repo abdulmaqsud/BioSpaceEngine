@@ -289,10 +289,11 @@ const apiService = {
 		};
 	},
 
-	async getFacets(): Promise<FacetsResponse> {
-		const url = buildUrl('/studies/facets/');
+	async getFacets(params: Record<string, QueryParamValue> = {}): Promise<FacetsResponse> {
+		const url = buildUrl('/studies/facets/', params);
 		const facets = await fetchJson<FacetsResponse>(url);
 		return {
+			total_studies: facets.total_studies ?? 0,
 			organisms: facets.organisms ?? [],
 			exposures: facets.exposures ?? [],
 			systems: facets.systems ?? [],
@@ -372,15 +373,13 @@ const apiService = {
 	async getStudyEntities(studyId: number | string): Promise<Entity[]> {
 		// Get entities through triples for a specific study
 		const triples = await this.getTriples({ study_id: studyId });
-		const entityIds = new Set<number>();
-		
 		// Extract unique entity IDs from triples
 		for (const triple of triples) {
 			// We need to get entity IDs from triples, but the current API doesn't return them
 			// For now, return empty array until we fix the backend
 			return [];
 		}
-		
+
 		return [];
 	},
 

@@ -492,47 +492,100 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
     )
     @action(detail=False, methods=["get"])
     def facets(self, request):
+        params = request.query_params
+
+        filtered_queryset = self._apply_advanced_filters(
+            self._apply_basic_filters(Study.objects.all(), params),
+            params,
+        ).distinct()
+
+        query_param = params.get("query", "")
+        query_value = query_param.strip() if query_param else ""
+        if query_value:
+            filtered_queryset = filtered_queryset.filter(
+                Q(title__icontains=query_value)
+                | Q(abstract__icontains=query_value)
+                | Q(sections__content__icontains=query_value)
+            ).distinct()
+
+        def has_value(raw):
+            return raw is not None and str(raw).strip() != ""
+
+        filter_keys = {
+            "query",
+            "organism",
+            "exposure",
+            "system",
+            "year",
+            "assay",
+            "mission",
+            "model_organism",
+            "molecular",
+            "search",
+            "year_from",
+            "year_to",
+            "journal",
+        }
+
+        include_zero_counts = any(has_value(params.get(key)) for key in filter_keys)
+
+        studies = list(
+            filtered_queryset.prefetch_related("sections").only(
+                "id", "title", "abstract", "journal", "year"
+            )
+        )
+
+        study_index = []
+        for study in studies:
+            parts = [
+                study.title or "",
+                study.abstract or "",
+                study.journal or "",
+            ]
+            parts.extend(section.content or "" for section in study.sections.all())
+            combined_text = " ".join(parts).lower()
+            study_index.append(
+                {
+                    "id": study.id,
+                    "year": study.year,
+                    "text": combined_text,
+                }
+            )
+
+        total_studies = len(study_index)
+        study_ids = [entry["id"] for entry in study_index]
+
+        def append_facet(collection, name, count):
+            if count > 0 or include_zero_counts:
+                collection.append({"name": name, "count": count})
+
+        def count_keyword(keyword):
+            lookup = keyword.lower()
+            return sum(1 for entry in study_index if lookup in entry["text"])
+
         organism_facets = []
 
-        human_count = (
-            Study.objects.filter(
-                Q(title__icontains="human")
-                | Q(abstract__icontains="human")
-            )
-            .exclude(
-                Q(title__icontains="mouse")
-                | Q(title__icontains="rat")
-                | Q(title__icontains="animal")
-            )
-            .distinct()
-            .count()
-        )
-        if human_count > 0:
-            organism_facets.append({"name": "Human", "count": human_count})
+        def contains(text: str, needle: str) -> bool:
+            return needle in text
 
-        mouse_count = (
-            Study.objects.filter(
-                Q(title__icontains="mouse")
-                | Q(abstract__icontains="mouse")
+        human_count = sum(
+            1
+            for entry in study_index
+            if contains(entry["text"], "human")
+            and not (
+                contains(entry["text"], "mouse")
+                or contains(entry["text"], "rat")
+                or contains(entry["text"], "animal")
             )
-            .distinct()
-            .count()
         )
-        if mouse_count > 0:
-            organism_facets.append({"name": "Mouse", "count": mouse_count})
+        append_facet(organism_facets, "Human", human_count)
 
-        other_organisms = ["Rat", "Plant", "Bacteria", "Other"]
-        for organism in other_organisms:
-            count = (
-                Study.objects.filter(
-                    Q(title__icontains=organism.lower())
-                    | Q(abstract__icontains=organism.lower())
-                )
-                .distinct()
-                .count()
-            )
-            if count > 0:
-                organism_facets.append({"name": organism, "count": count})
+        mouse_count = sum(1 for entry in study_index if contains(entry["text"], "mouse"))
+        append_facet(organism_facets, "Mouse", mouse_count)
+
+        for organism in ["Rat", "Plant", "Bacteria", "Other"]:
+            count = count_keyword(organism)
+            append_facet(organism_facets, organism, count)
 
         exposure_facets = []
         exposures = [
@@ -545,16 +598,8 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Gravity",
         ]
         for exposure in exposures:
-            count = (
-                Study.objects.filter(
-                    Q(title__icontains=exposure.lower())
-                    | Q(abstract__icontains=exposure.lower())
-                )
-                .distinct()
-                .count()
-            )
-            if count > 0:
-                exposure_facets.append({"name": exposure, "count": count})
+            count = count_keyword(exposure)
+            append_facet(exposure_facets, exposure, count)
 
         system_facets = []
         systems = [
@@ -568,16 +613,8 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Tissue",
         ]
         for system in systems:
-            count = (
-                Study.objects.filter(
-                    Q(title__icontains=system.lower())
-                    | Q(abstract__icontains=system.lower())
-                )
-                .distinct()
-                .count()
-            )
-            if count > 0:
-                system_facets.append({"name": system, "count": count})
+            count = count_keyword(system)
+            append_facet(system_facets, system, count)
 
         model_organism_facets = []
         model_organisms = [
@@ -590,30 +627,10 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
         ]
         for organism in model_organisms:
             if organism.lower() == "human":
-                count = (
-                    Study.objects.filter(
-                        Q(title__icontains="human")
-                        | Q(abstract__icontains="human")
-                    )
-                    .exclude(
-                        Q(title__icontains="mouse")
-                        | Q(title__icontains="rat")
-                        | Q(title__icontains="animal")
-                    )
-                    .distinct()
-                    .count()
-                )
+                count = human_count
             else:
-                count = (
-                    Study.objects.filter(
-                        Q(title__icontains=organism.lower())
-                        | Q(abstract__icontains=organism.lower())
-                    )
-                    .distinct()
-                    .count()
-                )
-            if count > 0:
-                model_organism_facets.append({"name": organism, "count": count})
+                count = count_keyword(organism)
+            append_facet(model_organism_facets, organism, count)
 
         molecular_facets = []
         molecular_terms = [
@@ -627,42 +644,20 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Proteomics",
         ]
         for term in molecular_terms:
-            count = (
-                Study.objects.filter(
-                    Q(title__icontains=term.lower())
-                    | Q(abstract__icontains=term.lower())
-                )
-                .distinct()
-                .count()
-            )
-            if count > 0:
-                molecular_facets.append({"name": term, "count": count})
+            count = count_keyword(term)
+            append_facet(molecular_facets, term, count)
 
         year_facets = []
-        years = [str(year) for year in range(2024, 1990, -1)]
-        for year in years:
-            try:
-                year_int = int(year)
-            except ValueError:
-                continue
-
-            count = Study.objects.filter(year=year_int).count()
+        for year in range(2024, 1990, -1):
+            count = sum(1 for entry in study_index if entry["year"] == year)
             if count == 0:
-                count = (
-                    Study.objects.filter(
-                        Q(title__icontains=year)
-                        | Q(abstract__icontains=year)
-                        | Q(title__icontains=f"({year})")
-                        | Q(title__icontains=f", {year}")
-                        | Q(abstract__icontains=f"({year})")
-                        | Q(abstract__icontains=f", {year}")
-                    )
-                    .distinct()
-                    .count()
+                year_str = str(year)
+                count = sum(
+                    1
+                    for entry in study_index
+                    if year_str in entry["text"]
                 )
-
-            if count > 0:
-                year_facets.append({"name": year, "count": count})
+            append_facet(year_facets, str(year), count)
 
         journal_facets = []
         journals = [
@@ -676,16 +671,8 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Scientific Reports",
         ]
         for journal in journals:
-            count = (
-                Study.objects.filter(
-                    Q(title__icontains=journal)
-                    | Q(abstract__icontains=journal)
-                )
-                .distinct()
-                .count()
-            )
-            if count > 0:
-                journal_facets.append({"name": journal, "count": count})
+            count = count_keyword(journal)
+            append_facet(journal_facets, journal, count)
 
         assay_facets = []
         assays = [
@@ -698,16 +685,8 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Mass Spectrometry",
         ]
         for assay in assays:
-            count = (
-                Study.objects.filter(
-                    Q(title__icontains=assay)
-                    | Q(abstract__icontains=assay)
-                )
-                .distinct()
-                .count()
-            )
-            if count > 0:
-                assay_facets.append({"name": assay, "count": count})
+            count = count_keyword(assay)
+            append_facet(assay_facets, assay, count)
 
         mission_facets = []
         missions = [
@@ -721,19 +700,16 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             "Station",
         ]
         for mission in missions:
-            count = (
-                Study.objects.filter(
-                    Q(title__icontains=mission)
-                    | Q(abstract__icontains=mission)
-                )
-                .distinct()
-                .count()
-            )
-            if count > 0:
-                mission_facets.append({"name": mission, "count": count})
+            count = count_keyword(mission)
+            append_facet(mission_facets, mission, count)
 
-        entity_types = Entity.objects.values("entity_type").annotate(
-            count=Count("entity_type")
+        entity_types = (
+            Entity.objects.filter(
+                Q(subject_triples__study_id__in=study_ids)
+                | Q(object_triples__study_id__in=study_ids)
+            )
+            .values("entity_type")
+            .annotate(count=Count("id", distinct=True))
         )
         entity_facets = [
             {"name": entry["entity_type"], "count": entry["count"]}
@@ -743,7 +719,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response(
             {
-                "total_studies": Study.objects.count(),
+                "total_studies": total_studies,
                 "organisms": organism_facets,
                 "exposures": exposure_facets,
                 "systems": system_facets,

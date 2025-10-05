@@ -1,6 +1,18 @@
 'use client';
 
-import { FacetsResponse } from '../../lib/api';
+import { FacetBucket, FacetsResponse } from '../../lib/api';
+
+export type FacetKey =
+  | 'organism'
+  | 'exposure'
+  | 'system'
+  | 'year'
+  | 'assay'
+  | 'mission'
+  | 'model_organism'
+  | 'molecular';
+
+export type DynamicFacetCounts = Partial<Record<FacetKey, Record<string, number>>>;
 
 interface FacetFiltersProps {
   facets: FacetsResponse | null;
@@ -15,6 +27,7 @@ interface FacetFiltersProps {
   onFacetChange: (facetType: string, value: string) => void;
   onClearFilters: () => void;
   activeFiltersCount: number;
+  dynamicCounts?: DynamicFacetCounts | null;
 }
 
 export default function FacetFilters({
@@ -29,9 +42,23 @@ export default function FacetFilters({
   selectedMolecular,
   onFacetChange,
   onClearFilters,
-  activeFiltersCount
+  activeFiltersCount,
+  dynamicCounts
 }: FacetFiltersProps) {
-  const facetSections = [
+  const useDynamic = !!dynamicCounts;
+
+  // Helper to safely get dynamic counts for a facet key
+  function getDynamicCount(key: FacetKey, name: string): number {
+    const facetCounts = dynamicCounts?.[key as FacetKey];
+    if (!facetCounts) return 0;
+    return typeof facetCounts[name] === 'number' ? facetCounts[name] : 0;
+  }
+  const facetSections: Array<{
+    title: string;
+    key: FacetKey;
+    selected: string;
+    options: FacetBucket[];
+  }> = [
     {
       title: 'Organism',
       key: 'organism',
@@ -123,7 +150,9 @@ export default function FacetFilters({
                 {section.title}
               </h4>
               <span className="rounded-full border border-cyan-500/20 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.25em] text-cyan-100">
-                {section.options.length}
+                {useDynamic
+                  ? section.options.reduce((total, option) => total + getDynamicCount(section.key, option.name), 0)
+                  : section.options.length}
               </span>
             </div>
             <div className="space-y-2">
@@ -148,7 +177,9 @@ export default function FacetFilters({
                     </span>
                   </div>
                   <span className="text-xs font-semibold text-cyan-100/80">
-                    {option.count}
+                    {useDynamic
+                      ? getDynamicCount(section.key, option.name)
+                      : option.count}
                   </span>
                 </label>
               ))}
@@ -163,7 +194,7 @@ export default function FacetFilters({
         <div className="mt-4 space-y-3 text-sm text-slate-200">
           <div className="flex items-center justify-between">
             <span className="text-slate-300">Total Studies</span>
-            <span className="font-semibold text-cyan-100">572</span>
+            <span className="font-semibold text-cyan-100">{facets.total_studies}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-300">Full Text</span>
