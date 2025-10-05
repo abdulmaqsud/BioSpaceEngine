@@ -326,17 +326,17 @@ export default function PaperDetailPage() {
                   <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200">Top Sections</h3>
                   <div className="mt-4 space-y-3 text-sm text-slate-300">
                     {sectionHighlights.length > 0 ? (
-                      sectionHighlights.map((section) => (
-                        <div
-                          key={section.id}
-                          className="rounded-xl border border-cyan-400/10 bg-slate-950/60 p-3"
-                        >
-                          <p className="text-xs uppercase tracking-[0.28em] text-cyan-200/80">
-                            {section.section_type}
-                          </p>
+                      sectionHighlights.map((section => (
+                        <div key={section.id} className="rounded-xl border border-cyan-400/10 bg-slate-950/60 p-3">
+                          <p className="text-xs uppercase tracking-[0.28em] text-cyan-200/80">{section.section_type}</p>
                           {section.title && <p className="mt-1 font-medium text-slate-100">{section.title}</p>}
+                          {section.content && (
+                            <p className="mt-2 text-xs leading-relaxed text-slate-300 line-clamp-3">
+                              {section.content.substring(0, 200)}...
+                            </p>
+                          )}
                         </div>
-                      ))
+                      )))
                     ) : (
                       <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
                         Section metadata pending ingestion
@@ -386,12 +386,21 @@ export default function PaperDetailPage() {
               {activeTab === 'overview' && (
                 <div className="space-y-6 text-sm text-slate-200">
                   <div className="rounded-2xl border border-cyan-400/10 bg-slate-900/60 p-6">
-                    <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200">Mission Summary</h3>
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200">Research Overview</h3>
                     <p className="mt-3 leading-relaxed text-slate-300">
-                      This dossier consolidates NASA space biology intelligence for{' '}
-                      <span className="text-cyan-100">{study.title}</span>. Review highlights below to capture the core
-                      findings before diving into raw evidence and entity extractions.
+                      <strong>Study Title:</strong> {study.title}
                     </p>
+                    {study.abstract ? (
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200 mb-2">Abstract</p>
+                        <p className="leading-relaxed text-slate-300">{study.abstract}</p>
+                      </div>
+                    ) : (
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200 mb-2">Abstract</p>
+                        <p className="leading-relaxed text-slate-400 italic">Abstract not available for this study.</p>
+                      </div>
+                    )}
                     {evidenceHighlights.length > 0 && (
                       <ul className="mt-4 space-y-3">
                         {evidenceHighlights.map((item, index) => (
@@ -438,6 +447,11 @@ export default function PaperDetailPage() {
                             <li key={section.id} className="flex flex-col rounded-xl border border-cyan-400/10 bg-slate-950/60 p-3">
                               <span className="text-cyan-100">{section.section_type}</span>
                               {section.title && <span className="mt-1 text-slate-200">{section.title}</span>}
+                              {section.content && (
+                                <p className="mt-2 text-xs leading-relaxed text-slate-400 line-clamp-2">
+                                  {section.content.substring(0, 150)}...
+                                </p>
+                              )}
                             </li>
                           ))}
                         </ul>

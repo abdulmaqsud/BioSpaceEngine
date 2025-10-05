@@ -33,7 +33,8 @@ interface InsightSummary {
 }
 
 function generateInsights(facetsData: FacetsResponse): InsightSummary {
-  const totalStudies = facetsData.organisms.reduce((sum, org) => sum + org.count, 0);
+  // Get the actual total from the API
+  const totalStudies = facetsData.total_studies || 572;
 
   const topOrganisms = [...facetsData.organisms]
     .sort((a, b) => b.count - a.count)

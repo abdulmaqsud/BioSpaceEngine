@@ -480,6 +480,7 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
         entity_facets = [{'name': et['entity_type'], 'count': et['count']} for et in entity_types if et['entity_type']]
         
         return Response({
+            'total_studies': Study.objects.count(),
             'organisms': organism_facets,
             'exposures': exposure_facets,
             'systems': system_facets,

@@ -124,16 +124,17 @@ export interface FacetBucket {
 }
 
 export interface FacetsResponse {
-	organisms: FacetBucket[];
-	exposures: FacetBucket[];
-	systems: FacetBucket[];
-	model_organisms: FacetBucket[];
-	molecular: FacetBucket[];
-	years: FacetBucket[];
-	assays: FacetBucket[];
-	missions: FacetBucket[];
-	journals: FacetBucket[];
-	entity_types: FacetBucket[];
+  total_studies: number;
+  organisms: FacetBucket[];
+  exposures: FacetBucket[];
+  systems: FacetBucket[];
+  model_organisms: FacetBucket[];
+  molecular: FacetBucket[];
+  years: FacetBucket[];
+  assays: FacetBucket[];
+  missions: FacetBucket[];
+  journals: FacetBucket[];
+  entity_types: FacetBucket[];
 }
 
 export interface StudyListResponse {
