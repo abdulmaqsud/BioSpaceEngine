@@ -22,22 +22,22 @@ export default function Home() {
   const progressHighlights = useMemo(
     () => [
       {
-        title: "Microgravity Cellular Insights",
+        title: "What we've learned from space",
         description:
-          "Over 570 curated studies mapping gene expression, immunity response, and plant adaptation in low-gravity environments.",
-        metric: "572 indexed studies",
+          "572 studies showing how microgravity affects bones, muscles, plants, and cells in space.",
+        metric: "572 studies",
       },
       {
-        title: "Mission-Ready Knowledge Graph",
+        title: "Connected research findings",
         description:
-          "Evidence sentences and entity links unify findings across NASA missions from ISS to Artemis precursor campaigns.",
-        metric: "31k relationships",
+          "Studies are linked together so you can see how different research connects and builds on each other.",
+        metric: "31k connections",
       },
       {
-        title: "AI-Powered Evidence Extraction",
+        title: "Key findings extracted",
         description:
-          "Sentence-level claims surface critical biological effects, accelerating literature reviews by weeks.",
-        metric: "42k evidence points",
+          "Important sentences and findings are pulled out from each study to help you find what matters most.",
+        metric: "42k key findings",
       },
     ],
     [],
@@ -92,17 +92,17 @@ export default function Home() {
     () => [
       {
         title: "Scientists",
-        body: "Spot under explored variables, download structured evidence, and launch new hypotheses in minutes.",
+        body: "Find research gaps, download data, and discover new research questions quickly.",
         icon: <Beaker className="h-5 w-5 text-emerald-300" aria-hidden />,
       },
       {
-        title: "Mission architects",
-        body: "Stress-test scenarios for lunar and Martian missions with biology-backed risk intelligence.",
+        title: "Mission planners",
+        body: "Use research findings to plan safer missions and design better space habitats.",
         icon: <Globe2 className="h-5 w-5 text-sky-300" aria-hidden />,
       },
       {
-        title: "Leaders & Investors",
-        body: "Surface funding gaps and high-leverage biology programs ready for scale up.",
+        title: "Students & Educators",
+        body: "Learn about space biology research and understand how life changes in space.",
         icon: <BrainCircuit className="h-5 w-5 text-fuchsia-300" aria-hidden />,
       },
     ],
@@ -110,7 +110,7 @@ export default function Home() {
   );
 
   const suggestedQueries = useMemo(
-    () => ["microgravity bone regeneration", "plant phototropism space", "immune response lunar mission"], []);
+    () => ["bone loss in space", "plant growth microgravity", "immune system space"], []);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -153,7 +153,7 @@ export default function Home() {
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search biology insights: microgravity immunity, plant genomics, lunar regolith..."
+                placeholder="Try: 'bone loss in space', 'plant growth microgravity', 'immune system space'..."
                 className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
                 maxLength={maximumQueryLength}
                 aria-label="Search space biology intelligence"
@@ -182,7 +182,7 @@ export default function Home() {
           </form>
 
           <div className="mt-10 flex flex-col items-center gap-3 text-sm text-slate-400">
-            <span className="uppercase tracking-[0.3em] text-slate-500">Trusted by NASA research teams</span>
+            <span className="uppercase tracking-[0.3em] text-slate-500">Research from NASA missions</span>
             <div className="flex items-center gap-6 text-xs uppercase tracking-[0.35em] text-slate-500">
               <span className="rounded-full border border-cyan-400/20 px-3 py-1 text-cyan-100/80">ISS</span>
               <span className="rounded-full border border-cyan-400/20 px-3 py-1 text-cyan-100/80">Artemis</span>
@@ -194,7 +194,7 @@ export default function Home() {
 
         <section className="mt-24 space-y-8">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-50">What have we learned so far?</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-50">What do we know about life in space?</h2>
             <Link
               href="/explore"
               className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-cyan-200 transition hover:text-white"
@@ -230,9 +230,9 @@ export default function Home() {
               <Telescope className="h-4 w-4" aria-hidden />
               Unmapped Territory
             </span>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-50">Where do we still need answers?</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-50">What don't we know yet?</h2>
             <p className="mx-auto max-w-3xl text-sm text-slate-300">
-              Target upcoming investigations by visualizing biology domains with limited coverage or conflicting evidence.
+              Areas where we need more research to prepare for long space missions.
             </p>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
@@ -263,10 +263,10 @@ export default function Home() {
               Mission Impact
             </span>
             <h2 className="text-2xl font-semibold tracking-tight text-slate-50">
-              How biology shapes lunar and Martian campaigns
+              How this research helps future missions
             </h2>
             <p className="max-w-3xl text-sm text-slate-300">
-              Connect biological stressors to flight-readiness decisions, habitat architectures, and countermeasure roadmaps.
+              Understanding how space affects biology helps us design better habitats and keep astronauts healthy.
             </p>
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -302,12 +302,11 @@ export default function Home() {
               <Rocket className="h-4 w-4" aria-hidden />
               Designed for Impact
             </span>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-50">A tailored lens for every stakeholder</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-50">Who can use this?</h2>
             <p className="mx-auto max-w-3xl text-sm text-slate-300">
-              Whether you are designing missions, funding programs, or shaping experiments, BioSpace adapts to your
-              workflow.
+              Whether you're a scientist, mission planner, or just curious about space biology, this tool helps you find what you need.
             </p>
-          </div>
+        </div>
           <div className="grid gap-6 md:grid-cols-3">
             {audiences.map((item) => (
               <article
@@ -336,11 +335,10 @@ export default function Home() {
             Ready for launch?
           </span>
           <h2 className="text-3xl font-semibold tracking-tight text-slate-50">
-            Start exploring the BioSpace knowledge atlas.
+            Ready to explore?
           </h2>
           <p className="max-w-2xl text-sm text-slate-300">
-            Jump into mission-aligned datasets, build comparison decks, and surface intelligence that drives the next
-            decade of space biology breakthroughs.
+            Start searching through NASA's space biology research to find answers about how life adapts to space.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -354,10 +352,10 @@ export default function Home() {
               href="/compare"
               className="inline-flex items-center gap-2 rounded-full border border-slate-500/40 bg-slate-900/70 px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-200 transition hover:border-slate-300/60 hover:text-white"
             >
-              Build a compare deck
+              Compare studies
             </Link>
           </div>
-        </footer>
+      </footer>
       </div>
     </div>
   );
