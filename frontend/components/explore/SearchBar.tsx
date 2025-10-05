@@ -21,6 +21,7 @@ interface SearchBarProps {
   onSearch: (query: string) => void;
   loading: boolean;
   placeholder?: string;
+  onClear?: () => void;
 }
 
 export default function SearchBar({
@@ -29,6 +30,7 @@ export default function SearchBar({
   onSearch,
   loading,
   placeholder,
+  onClear,
 }: SearchBarProps) {
   const [internalQuery, setInternalQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -84,6 +86,13 @@ export default function SearchBar({
     updateSuggestions(value);
   };
 
+  const handleClear = () => {
+    setInternalQuery('');
+    onQueryChange('');
+    setShowSuggestions(false);
+    onClear?.();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       setShowSuggestions(false);
@@ -105,17 +114,29 @@ export default function SearchBar({
             className="w-full rounded-2xl border border-cyan-500/20 bg-slate-900/60 px-6 py-5 text-lg text-slate-100 shadow-[0_0_25px_rgba(8,47,73,0.25)] outline-none transition focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-400/40"
             disabled={loading}
           />
-          <button
-            type="submit"
-            disabled={loading || !internalQuery.trim()}
-            className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2 rounded-xl border border-cyan-300/30 bg-cyan-500/20 px-5 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-100 transition hover:border-cyan-200/60 hover:text-white disabled:border-slate-600 disabled:text-slate-400"
-          >
-            {loading ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-cyan-200"></div>
-            ) : (
-              'Search'
+          <div className="absolute inset-y-0 right-3 flex items-center gap-2">
+            {internalQuery.trim().length > 0 && !loading && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-400/30 bg-slate-900/70 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/60 hover:text-white"
+                aria-label="Clear search"
+              >
+                ×
+              </button>
             )}
-          </button>
+            <button
+              type="submit"
+              disabled={loading || !internalQuery.trim()}
+              className="flex items-center gap-2 rounded-xl border border-cyan-300/30 bg-cyan-500/20 px-5 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-100 transition hover:border-cyan-200/60 hover:text-white disabled:border-slate-600 disabled:text-slate-400"
+            >
+              {loading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-cyan-200"></div>
+              ) : (
+                'Search'
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Search Suggestions */}

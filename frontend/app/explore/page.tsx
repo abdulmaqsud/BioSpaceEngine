@@ -2,11 +2,96 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { apiService, SearchResult, FacetsResponse } from '../../lib/api';
+import { apiService, SearchResult, FacetsResponse, Study } from '../../lib/api';
 import SearchBar from '../../components/explore/SearchBar';
-import FacetFilters from '../../components/explore/FacetFilters';
+import FacetFilters, { DynamicFacetCounts, FacetKey } from '../../components/explore/FacetFilters';
 import ResultCards from '../../components/explore/ResultCards';
 import Link from 'next/link';
+
+type FacetArrayKey =
+  | 'organisms'
+  | 'exposures'
+  | 'systems'
+  | 'years'
+  | 'assays'
+  | 'missions'
+  | 'model_organisms'
+  | 'molecular';
+
+const FACET_FIELD_MAP: Record<FacetKey, FacetArrayKey> = {
+  organism: 'organisms',
+  exposure: 'exposures',
+  system: 'systems',
+  year: 'years',
+  assay: 'assays',
+  mission: 'missions',
+  model_organism: 'model_organisms',
+  molecular: 'molecular',
+};
+
+const FACET_ENTRIES = Object.entries(FACET_FIELD_MAP) as Array<[
+  FacetKey,
+  FacetArrayKey
+]>;
+
+const TEXT_FIELDS: Array<keyof Pick<Study, 'title' | 'abstract' | 'journal' | 'authors'>> = [
+  'title',
+  'abstract',
+  'journal',
+  'authors',
+];
+
+function doesStudyMatchFacetOption(
+  study: Study,
+  facetKey: FacetKey,
+  optionName: string
+): boolean {
+  if (!optionName) {
+    return false;
+  }
+
+  const normalized = optionName.toLowerCase();
+
+  if (facetKey === 'year') {
+    const yearString = study.year ? String(study.year) : '';
+    return yearString === optionName || yearString.includes(normalized);
+  }
+
+  const combined = TEXT_FIELDS.map((field) => study[field]?.toLowerCase() ?? '').join(' ');
+  return combined.includes(normalized);
+}
+
+function computeDynamicFacetCounts(
+  results: SearchResult[],
+  facets: FacetsResponse
+): DynamicFacetCounts {
+    const dynamicCounts: DynamicFacetCounts = {};
+
+    FACET_ENTRIES.forEach(([facetKey, facetField]) => {
+      const buckets = facets[facetField] ?? [];
+      dynamicCounts[facetKey] = buckets.reduce<Record<string, number>>((acc, bucket) => {
+        acc[bucket.name] = 0;
+        return acc;
+      }, {});
+    });
+
+    results.forEach(({ study }) => {
+      FACET_ENTRIES.forEach(([facetKey]) => {
+        const counts = dynamicCounts[facetKey];
+        if (!counts) {
+          return;
+        }
+
+        Object.keys(counts).forEach((optionName) => {
+          if (doesStudyMatchFacetOption(study, facetKey, optionName)) {
+            counts[optionName] += 1;
+          }
+        });
+      });
+    });
+
+    return dynamicCounts;
+}
 
 export default function ExplorePage() {
   const router = useRouter();
@@ -17,6 +102,7 @@ export default function ExplorePage() {
   const [inputQuery, setInputQuery] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [facets, setFacets] = useState<FacetsResponse | null>(null);
+  const [dynamicFacetCounts, setDynamicFacetCounts] = useState<DynamicFacetCounts | null>(null);
   
   // Facet filter states
   const [selectedOrganism, setSelectedOrganism] = useState<string>('');
@@ -117,27 +203,27 @@ export default function ExplorePage() {
     }
   };
 
+  const clearSearch = () => {
+    router.push('/explore');
+    setInputQuery('');
+    setActiveQuery('');
+    setSearchResults([]);
+    setDynamicFacetCounts(null);
+  };
+
   const searchParamQuery = searchParams.get('q') ?? '';
 
   useEffect(() => {
     const trimmedParam = searchParamQuery.trim();
 
     if (trimmedParam.length > 0) {
-      if (trimmedParam !== activeQuery) {
-        setActiveQuery(trimmedParam);
-      }
-      if (trimmedParam !== inputQuery) {
-        setInputQuery(trimmedParam);
-      }
+      setActiveQuery((prev) => (prev === trimmedParam ? prev : trimmedParam));
+      setInputQuery((prev) => (prev === trimmedParam ? prev : trimmedParam));
     } else {
-      if (activeQuery !== '') {
-        setActiveQuery('');
-      }
-      if (inputQuery !== '') {
-        setInputQuery('');
-      }
+      setActiveQuery((prev) => (prev === '' ? prev : ''));
+      setInputQuery((prev) => (prev === '' ? prev : ''));
     }
-  }, [searchParamQuery, activeQuery, inputQuery]);
+  }, [searchParamQuery]);
 
   useEffect(() => {
     const trimmedQuery = activeQuery.trim();
@@ -157,6 +243,7 @@ export default function ExplorePage() {
     if (!trimmedQuery && !hasFilters) {
       setSearchResults([]);
       setLoading(false);
+      setDynamicFacetCounts(null);
       return;
     }
 
@@ -186,6 +273,33 @@ export default function ExplorePage() {
       isCancelled = true;
     };
   }, [activeQuery, selectedOrganism, selectedExposure, selectedSystem, selectedYear, selectedAssay, selectedMission, selectedModelOrganism, selectedMolecular]);
+
+  useEffect(() => {
+    if (!facets) {
+      setDynamicFacetCounts(null);
+      return;
+    }
+
+    const activeFilters = [
+      selectedOrganism,
+      selectedExposure,
+      selectedSystem,
+      selectedYear,
+      selectedAssay,
+      selectedMission,
+      selectedModelOrganism,
+      selectedMolecular,
+    ].filter(Boolean);
+
+    if (!activeQuery.trim() && activeFilters.length === 0) {
+      setDynamicFacetCounts(null);
+      return;
+    }
+
+    setDynamicFacetCounts(
+      computeDynamicFacetCounts(searchResults, facets)
+    );
+  }, [facets, searchResults, activeQuery, selectedOrganism, selectedExposure, selectedSystem, selectedYear, selectedAssay, selectedMission, selectedModelOrganism, selectedMolecular]);
 
   const activeFilters = [
     selectedOrganism,
@@ -246,7 +360,7 @@ export default function ExplorePage() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-4">
           {/* Left Sidebar - Facets */}
           <div className="lg:col-span-1">
@@ -263,6 +377,7 @@ export default function ExplorePage() {
               onFacetChange={handleFacetChange}
               onClearFilters={clearFilters}
               activeFiltersCount={activeFilters.length}
+              dynamicCounts={dynamicFacetCounts}
             />
           </div>
 
@@ -275,6 +390,7 @@ export default function ExplorePage() {
               onSearch={handleSearch}
               loading={loading}
               placeholder="Search for: 'microgravity bone loss', 'plant growth space', 'muscle atrophy'..."
+              onClear={clearSearch}
             />
 
 
