@@ -201,9 +201,12 @@ export default function PaperDetailPage() {
 
   const sectionLengthSeries = useMemo(() => {
     const limit = isMobile ? 6 : 12;
-    const limited = sectionLengthData.slice(0, limit);
-    if (sectionLengthData.length > limit) {
-      const otherWords = sectionLengthData
+    const sortedByWords = sectionLengthData
+      .slice()
+      .sort((a, b) => b.words - a.words);
+    const limited = sortedByWords.slice(0, limit);
+    if (sortedByWords.length > limit) {
+      const otherWords = sortedByWords
         .slice(limit)
         .reduce((sum, entry) => sum + entry.words, 0);
       if (otherWords > 0) {
@@ -448,7 +451,7 @@ export default function PaperDetailPage() {
         },
       ],
     } satisfies EChartsOption;
-  }, [sectionLengthSeries, isMobile]);
+  }, [sectionLengthSeries]);
 
   const evidenceSectionChartOption = useMemo<EChartsOption>(() => {
     const categories =
