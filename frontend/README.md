@@ -1,57 +1,34 @@
-# BioSpace Frontend — Space Biology Knowledge Engine
+# BioSpace Frontend
 
-Complete frontend interface for the BioSpace Space Biology Knowledge Engine, built with Next.js 15 and TypeScript. Features 6 major pages with full functionality and real data integration.
+Next.js frontend for the BioSpace Space Biology Knowledge Engine with semantic search, knowledge graphs, and study analysis.
 
-## 🚀 Project Status: FULLY IMPLEMENTED
+## Status
 - **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
-- **Status**: Production-ready with complete functionality
-- **Pages**: 6 fully functional pages
-- **Features**: Real data integration, interactive visualizations, smart filtering
+- **Styling**: Tailwind CSS
+- **Pages**: 6 functional pages
+- **Features**: Real data integration, interactive visualizations
 
-## Getting Started
+## Quick Start
 
-### Prerequisites
-- Node.js 20+
-- Backend API running on `http://127.0.0.1:8000`
-
-### Development
 ```bash
-cd frontend
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the application.
+Access at `http://localhost:3000`
 
-## ✅ Implemented Features
-- **Explore Page** - AI-powered search with smart filtering and facet navigation
-- **Paper Details** - Complete study pages with sections, evidence, and entities
-- **Compare Studies** - Side-by-side analysis of up to 3 studies
-- **Consensus Insights** - Research patterns, trends, and gap analysis
-- **Knowledge Graph** - Interactive D3.js visualization of entity relationships
-- **About Page** - Project information and methodology
-- **Smart Study Tags** - Dynamic categorization based on research content
-- **Responsive Design** - Mobile-friendly interface
-- **Real Data Integration** - Shows actual research content, not just metadata
-
-## API Integration
-This frontend connects to the Django REST API backend:
-- **Search**: `GET /api/studies/search/?q=query` - Semantic search with filtering
-- **Studies**: `GET /api/studies/` - List all studies
-- **Study Details**: `GET /api/studies/{id}/` - Individual study data
-- **Sections**: `GET /api/studies/{id}/sections/` - Study sections and content
-- **Evidence**: `GET /api/studies/{id}/evidence/` - Research evidence sentences
-- **Entities**: `GET /api/entities/` - Extracted entities for knowledge graph
-- **Triples**: `GET /api/triples/` - Knowledge graph relationships
-- **Facets**: `GET /api/studies/facets/` - Filter options and counts
+## Features
+- **Explore Page** - AI-powered search with filtering
+- **Paper Details** - Study pages with sections and evidence
+- **Compare Studies** - Side-by-side analysis
+- **Consensus Insights** - Research patterns and trends
+- **Knowledge Graph** - Interactive D3.js visualization
+- **About Page** - Project information
 
 ## Tech Stack
-- **Next.js 15** - React framework with App Router and SSR
+- **Next.js 15** - React framework with App Router
 - **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first styling
-- **React 19** - Latest React features
-- **D3.js** - Interactive data visualizations
-- **localStorage** - Client-side data persistence
+- **D3.js** - Interactive visualizations
 - **Fetch API** - RESTful API communication
