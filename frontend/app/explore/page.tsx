@@ -6,7 +6,6 @@ import { apiService, SearchResult, FacetsResponse } from '../../lib/api';
 import SearchBar from '../../components/explore/SearchBar';
 import FacetFilters from '../../components/explore/FacetFilters';
 import ResultCards from '../../components/explore/ResultCards';
-import CoverageMeter from '../../components/explore/CoverageMeter';
 import Link from 'next/link';
 
 export default function ExplorePage() {
@@ -18,9 +17,6 @@ export default function ExplorePage() {
   const [inputQuery, setInputQuery] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [facets, setFacets] = useState<FacetsResponse | null>(null);
-  const [totalStudies] = useState(572);
-  const [fullTextCount] = useState(571);
-  const [abstractOnlyCount] = useState(1);
   
   // Facet filter states
   const [selectedOrganism, setSelectedOrganism] = useState<string>('');
@@ -168,7 +164,7 @@ export default function ExplorePage() {
     setLoading(true);
 
     apiService
-      .searchStudies(trimmedQuery, 50, 0.3, filters)
+      .searchStudies(trimmedQuery, 50, 0.7, filters)
       .then((response) => {
         if (!isCancelled) {
           setSearchResults(response.results);
@@ -216,10 +212,6 @@ export default function ExplorePage() {
                 <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
                   Explore NASA Space Biology Intelligence
                 </h1>
-                <span className="mt-1 inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.3em] text-cyan-200/80">
-                  <span className="h-[3px] w-8 rounded-full bg-cyan-300/70" />
-                  {totalStudies} indexed studies
-                </span>
               </div>
             </div>
             <nav className="flex flex-wrap items-center gap-2 text-sm">
@@ -285,13 +277,6 @@ export default function ExplorePage() {
               placeholder="Search for: 'microgravity bone loss', 'plant growth space', 'muscle atrophy'..."
             />
 
-            {/* Coverage Meter */}
-            <CoverageMeter
-              totalStudies={totalStudies}
-              fullTextCount={fullTextCount}
-              abstractOnlyCount={abstractOnlyCount}
-              searchResultsCount={searchResults.length}
-            />
 
             {/* Active Filters */}
             {activeFilters.length > 0 && (

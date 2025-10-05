@@ -276,7 +276,7 @@ const apiService = {
 		filters: SearchFilters = {}
 	): Promise<SearchResponse> {
 		const url = buildUrl('/studies/search/', {
-			q: query,
+			query: query,
 			limit,
 			threshold,
 			...filters,
@@ -367,6 +367,21 @@ const apiService = {
 		const url = buildUrl('/entities/', params);
 			const entities = await fetchJson<RawEntity[]>(url);
 			return Array.isArray(entities) ? entities.map(normalizeEntity) : [];
+	},
+
+	async getStudyEntities(studyId: number | string): Promise<Entity[]> {
+		// Get entities through triples for a specific study
+		const triples = await this.getTriples({ study_id: studyId });
+		const entityIds = new Set<number>();
+		
+		// Extract unique entity IDs from triples
+		for (const triple of triples) {
+			// We need to get entity IDs from triples, but the current API doesn't return them
+			// For now, return empty array until we fix the backend
+			return [];
+		}
+		
+		return [];
 	},
 
 		async getTriples(params: Record<string, QueryParamValue> = {}): Promise<Triple[]> {

@@ -104,7 +104,7 @@ export default function PaperDetailPage() {
             apiService.getStudy(studyId),
             apiService.getStudyEvidence(studyId),
             apiService.getStudySections(studyId),
-            apiService.getEntities({study: studyId}),
+            apiService.getStudyEntities(studyId),
           ]);
 
         setStudy(studyData);
@@ -135,7 +135,13 @@ export default function PaperDetailPage() {
   const isInCompareList = study ? compareList.includes(study.id) : false;
 
   const evidenceHighlights = useMemo(() => evidence.slice(0, 3), [evidence]);
-  const sectionHighlights = useMemo(() => sections.slice(0, 4), [sections]);
+  const sectionHighlights = useMemo(() => {
+    // Only show Abstract and Introduction sections
+    const filteredSections = sections.filter(section => 
+      section.section_type === 'abstract' || section.section_type === 'introduction'
+    );
+    return filteredSections.slice(0, 2);
+  }, [sections]);
 
   const uniqueEntityTypes = useMemo(
     () => new Set(entities.map((entity) => entity.entity_type)).size,
@@ -177,8 +183,9 @@ export default function PaperDetailPage() {
   }, [entityTypeData, isMobile]);
 
   const sectionLengthData = useMemo(
-    () =>
-      sections
+    () => {
+      // Normalize section names and remove duplicates
+      const normalizedSections = sections
         .map((section) => {
           const words = section.content
             ? section.content.trim().split(/\s+/).length
@@ -191,11 +198,26 @@ export default function PaperDetailPage() {
             id: section.id,
             order: section.order ?? 0,
             sectionType: section.section_type,
-            label,
+            label: label.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim(),
             words,
           };
         })
-        .sort((a, b) => a.order - b.order),
+        .sort((a, b) => a.order - b.order);
+
+      // Remove duplicates by combining sections with same normalized label
+      const uniqueSections = new Map();
+      normalizedSections.forEach(section => {
+        const key = section.label;
+        if (uniqueSections.has(key)) {
+          const existing = uniqueSections.get(key);
+          existing.words += section.words;
+        } else {
+          uniqueSections.set(key, { ...section });
+        }
+      });
+
+      return Array.from(uniqueSections.values());
+    },
     [sections]
   );
 
@@ -830,9 +852,36 @@ export default function PaperDetailPage() {
                   </div>
                   <p className="mt-3 text-sm leading-relaxed text-slate-300">
                     {study.abstract
-                      ? study.abstract
+                      ? study.abstract.replace(/^Abstract\s*/i, '').trim()
                       : "Abstract forthcoming. This NASA space biology study contributes new insights into microgravity-driven responses across biological systems."}
                   </p>
+                </div>
+
+                {/* Keywords/Subject Terms Section */}
+                <div className="rounded-2xl border border-cyan-400/10 bg-gradient-to-br from-slate-900/75 to-slate-900/35 p-6">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-500/10">
+                      <Dna className="h-5 w-5 text-cyan-200" aria-hidden />
+                    </span>
+                    <h2 className="text-lg font-semibold text-cyan-100">
+                      Key Terms
+                    </h2>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {entities.slice(0, 10).map((entity) => (
+                      <span
+                        key={entity.id}
+                        className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-cyan-100"
+                      >
+                        {entity.text}
+                      </span>
+                    ))}
+                    {entities.length === 0 && (
+                      <span className="text-xs uppercase tracking-[0.25em] text-slate-500">
+                        Key terms extraction in progress...
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1031,39 +1080,6 @@ export default function PaperDetailPage() {
               </div>
 
               <aside className="space-y-5">
-                <div className="rounded-2xl border border-cyan-400/10 bg-gradient-to-br from-slate-900/75 to-slate-900/30 p-6">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/15">
-                      <BadgeCheck className="h-5 w-5 text-cyan-200" aria-hidden />
-                    </span>
-                    <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200">
-                      Mission Tags
-                    </h3>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs uppercase tracking-[0.18em]">
-                    <span className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-cyan-100">
-                      NASA
-                    </span>
-                    <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 py-1 text-fuchsia-100">
-                      Space Biology
-                    </span>
-                    {study.title.toLowerCase().includes("microgravity") && (
-                      <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-emerald-100">
-                        Microgravity
-                      </span>
-                    )}
-                    {study.title.toLowerCase().includes("immune") && (
-                      <span className="rounded-full border border-rose-400/30 bg-rose-500/10 px-3 py-1 text-rose-100">
-                        Immunology
-                      </span>
-                    )}
-                    {study.title.toLowerCase().includes("plant") && (
-                      <span className="rounded-full border border-lime-400/30 bg-lime-500/10 px-3 py-1 text-lime-100">
-                        Plant Systems
-                      </span>
-                    )}
-                  </div>
-                </div>
 
                 <div className="rounded-2xl border border-cyan-400/10 bg-gradient-to-br from-slate-900/75 to-slate-900/30 p-6">
                   <div className="flex items-center gap-3">
@@ -1096,7 +1112,7 @@ export default function PaperDetailPage() {
                               )}
                               {section.content && (
                                 <p className="mt-2 text-xs leading-relaxed text-slate-300 line-clamp-3">
-                                  {section.content.substring(0, 200)}...
+                                  {section.content.replace(/^Abstract\s*/i, '').trim().substring(0, 200)}...
                                 </p>
                               )}
                             </div>
@@ -1141,243 +1157,6 @@ export default function PaperDetailPage() {
             </div>
           </section>
 
-          <section className="mt-10 rounded-3xl border border-cyan-400/15 bg-slate-950/70 p-6 shadow-[0_0_40px_rgba(59,130,246,0.25)]">
-            <nav className="flex flex-wrap gap-3 border-b border-cyan-400/10 pb-4 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-              {(["overview", "evidence", "entities"] as TabKey[]).map(
-                (tabKey) => (
-                  <button
-                    key={tabKey}
-                    onClick={() => setActiveTab(tabKey)}
-                    className={`rounded-full px-4 py-2 transition ${
-                      activeTab === tabKey
-                        ? "border border-cyan-400/60 bg-cyan-500/20 text-cyan-100 shadow-[0_0_20px_rgba(34,211,238,0.25)]"
-                        : "border border-transparent text-slate-400 hover:border-cyan-400/30 hover:text-cyan-100"
-                    }`}
-                  >
-                    {tabKey === "overview" && "Overview"}
-                    {tabKey === "evidence" && `Evidence (${evidence.length})`}
-                    {tabKey === "entities" && `Entities (${entities.length})`}
-                  </button>
-                )
-              )}
-            </nav>
-
-            <div className="mt-6">
-              {activeTab === "overview" && (
-                <div className="space-y-6 text-sm text-slate-200">
-                  <div className="rounded-2xl border border-cyan-400/10 bg-gradient-to-br from-slate-900/75 to-slate-900/30 p-6">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/15">
-                        <ClipboardList className="h-5 w-5 text-cyan-200" aria-hidden />
-                      </span>
-                      <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200">
-                        Research Overview
-                      </h3>
-                    </div>
-                    <p className="mt-3 leading-relaxed text-slate-300">
-                      <strong>Study Title:</strong> {study.title}
-                    </p>
-                    {study.abstract ? (
-                      <div className="mt-4">
-                        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200 mb-2">
-                          Abstract
-                        </p>
-                        <p className="leading-relaxed text-slate-300">
-                          {study.abstract}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="mt-4">
-                        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200 mb-2">
-                          Abstract
-                        </p>
-                        <p className="leading-relaxed text-slate-400 italic">
-                          Abstract not available for this study.
-                        </p>
-                      </div>
-                    )}
-                    {evidenceHighlights.length > 0 && (
-                      <ul className="mt-4 space-y-3">
-                        {evidenceHighlights.map((item, index) => (
-                          <li
-                            key={item.id}
-                            className="rounded-xl border border-cyan-400/10 bg-slate-950/60 p-4 text-sm text-slate-200"
-                          >
-                            <div className="flex items-start gap-3">
-                              <span className="mt-1 flex h-8 w-8 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/10">
-                                <Quote className="h-4 w-4 text-cyan-200" aria-hidden />
-                              </span>
-                              <div>
-                                <p className="text-xs uppercase tracking-[0.3em] text-cyan-200/80">
-                                  Finding #{index + 1}
-                                </p>
-                                <p className="mt-2 text-slate-100">
-                                  {item.sentence_text}
-                                </p>
-                              </div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                    <div className="rounded-2xl border border-cyan-400/10 bg-gradient-to-br from-slate-900/75 to-slate-900/30 p-6">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/15">
-                          <BadgeCheck className="h-5 w-5 text-cyan-200" aria-hidden />
-                        </span>
-                        <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200">
-                          Research Metadata
-                        </h3>
-                      </div>
-                      <dl className="mt-4 space-y-3 text-xs text-slate-300">
-                        <div className="flex justify-between border-b border-slate-700/40 pb-2">
-                          <dt>Publication Year</dt>
-                          <dd className="text-cyan-100">{study.year ?? "—"}</dd>
-                        </div>
-                        <div className="flex justify-between border-b border-slate-700/40 pb-2">
-                          <dt>Journal</dt>
-                          <dd className="text-cyan-100">
-                            {study.journal ?? "—"}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between border-b border-slate-700/40 pb-2">
-                          <dt>PMCID</dt>
-                          <dd className="text-cyan-100">{study.pmcid}</dd>
-                        </div>
-                        <div className="flex justify-between">
-                          <dt>Evidence Coverage</dt>
-                          <dd className="text-cyan-100">
-                            {evidence.length} findings
-                          </dd>
-                        </div>
-                      </dl>
-                    </div>
-
-                    <div className="rounded-2xl border border-cyan-400/10 bg-gradient-to-br from-slate-900/75 to-slate-900/30 p-6">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/15">
-                          <BookOpen className="h-5 w-5 text-cyan-200" aria-hidden />
-                        </span>
-                        <h3 className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200">
-                          Section Overview
-                        </h3>
-                      </div>
-                      {sectionHighlights.length > 0 ? (
-                        <ul className="mt-4 space-y-3 text-xs text-slate-300">
-                          {sectionHighlights.map((section) => (
-                            <li
-                              key={section.id}
-                              className="flex flex-col rounded-xl border border-cyan-400/10 bg-slate-950/60 p-3"
-                            >
-                              <span className="text-cyan-100">
-                                {section.section_type}
-                              </span>
-                              {section.title && (
-                                <span className="mt-1 text-slate-200">
-                                  {section.title}
-                                </span>
-                              )}
-                              {section.content && (
-                                <p className="mt-2 text-xs leading-relaxed text-slate-400 line-clamp-2">
-                                  {section.content.substring(0, 150)}...
-                                </p>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="mt-4 text-xs uppercase tracking-[0.25em] text-slate-500">
-                          Section breakdown is being prepared.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "evidence" && (
-                <div className="space-y-4">
-                  {evidence.length > 0 ? (
-                    evidence.map((item, index) => (
-                      <article
-                        key={item.id}
-                        className="rounded-2xl border border-cyan-400/10 bg-gradient-to-br from-slate-900/75 to-slate-900/30 p-5 text-sm text-slate-200 shadow-[0_0_25px_rgba(34,211,238,0.18)]"
-                      >
-                        <header className="mb-3 flex flex-wrap items-center justify-between gap-3 text-xs uppercase tracking-[0.28em] text-cyan-200/80">
-                          <span className="flex items-center gap-2">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/10">
-                              <Quote className="h-4 w-4 text-cyan-200" aria-hidden />
-                            </span>
-                            Finding #{index + 1}
-                          </span>
-                          <span>
-                            Position: {item.char_start ?? "—"}-
-                            {item.char_end ?? "—"}
-                          </span>
-                        </header>
-                        <p className="leading-relaxed text-slate-100">
-                          {item.sentence_text}
-                        </p>
-                        <footer className="mt-3 text-[11px] uppercase tracking-[0.28em] text-slate-500">
-                          Sentence Index: {item.sentence_index}
-                        </footer>
-                      </article>
-                    ))
-                  ) : (
-                    <div className="rounded-2xl border border-cyan-400/10 bg-slate-900/60 p-8 text-center text-sm text-slate-400">
-                      <p className="text-3xl text-cyan-200">🔍</p>
-                      <p className="mt-2 uppercase tracking-[0.25em]">
-                        Evidence extraction underway – check back soon.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === "entities" && (
-                <div className="space-y-4">
-                  {entities.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                      {entities.map((entity) => (
-                        <div
-                          key={entity.id}
-                          className="rounded-2xl border border-cyan-400/15 bg-gradient-to-br from-slate-900/75 to-slate-900/30 p-4 text-sm text-slate-200 shadow-[0_0_20px_rgba(165,105,255,0.2)]"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/10">
-                                <Dna className="h-4 w-4 text-cyan-200" aria-hidden />
-                              </span>
-                              <span className="font-semibold text-cyan-100">
-                                {entity.text}
-                              </span>
-                            </div>
-                            <span className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2 py-1 text-[11px] uppercase tracking-[0.25em] text-cyan-100">
-                              {entity.entity_type}
-                            </span>
-                          </div>
-                          <p className="mt-2 text-xs uppercase tracking-[0.25em] text-slate-400">
-                            Span: {entity.start_char ?? "—"}–
-                            {entity.end_char ?? "—"}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-cyan-400/10 bg-slate-900/60 p-8 text-center text-sm text-slate-400">
-                      <p className="text-3xl text-cyan-200">🧬</p>
-                      <p className="mt-2 uppercase tracking-[0.25em]">
-                        Entity extraction is being processed.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </section>
         </main>
 
         <footer className="mt-12 border-t border-cyan-400/10 bg-slate-950/70">

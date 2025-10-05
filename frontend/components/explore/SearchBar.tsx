@@ -30,9 +30,10 @@ export default function SearchBar({
   loading,
   placeholder,
 }: SearchBarProps) {
-  const [internalQuery, setInternalQuery] = useState(query ?? '');
+  const [internalQuery, setInternalQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   const updateSuggestions = useCallback((value: string) => {
     if (value.length > 2) {
@@ -48,9 +49,15 @@ export default function SearchBar({
   }, []);
 
   useEffect(() => {
-    setInternalQuery(query ?? '');
-    updateSuggestions(query ?? '');
-  }, [query, updateSuggestions]);
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      setInternalQuery(query ?? '');
+      updateSuggestions(query ?? '');
+    }
+  }, [query, updateSuggestions, isClient]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +96,7 @@ export default function SearchBar({
         <div className="relative">
           <input
             type="text"
-            value={internalQuery}
+            value={isClient ? internalQuery : ''}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => internalQuery.length > 2 && setShowSuggestions(true)}
@@ -127,19 +134,6 @@ export default function SearchBar({
         )}
       </form>
 
-      {/* Search Tips */}
-      <div className="mt-6 rounded-xl border border-cyan-500/10 bg-slate-900/70 px-5 py-4 text-sm text-slate-200">
-        <p className="mb-3 flex items-center gap-2 text-cyan-200">
-          <span className="text-base">💡</span>
-          <span className="font-semibold uppercase tracking-[0.2em] text-cyan-100">Search tips</span>
-        </p>
-        <ul className="ml-4 space-y-2 text-slate-300">
-          <li>Use natural language: &ldquo;How does microgravity affect muscle mass?&rdquo;</li>
-          <li>Combine concepts and exposures: &ldquo;plant growth&rdquo; + &ldquo;radiation&rdquo;</li>
-          <li>Target systems: &ldquo;bone density&rdquo;, &ldquo;cardiovascular&rdquo;, &ldquo;immune response&rdquo;</li>
-          <li>Apply facets to orbit mission, organism, or assay to refine</li>
-        </ul>
-      </div>
     </div>
   );
 }

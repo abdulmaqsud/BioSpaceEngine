@@ -93,9 +93,13 @@ class Command(BaseCommand):
         doc = nlp(text)
         entities = []
         
+        self.stdout.write(f"  Found {len(doc.ents)} entities in text")
+        
         for ent in doc.ents:
             # Classify entity type based on spaCy label and context
             entity_type = self.classify_entity_type(ent.label_, ent.text)
+            
+            self.stdout.write(f"    Entity: {ent.text} (spaCy: {ent.label_}, classified: {entity_type})")
             
             if entity_type != 'other':  # Only keep relevant entities
                 entities.append({
@@ -116,7 +120,7 @@ class Command(BaseCommand):
         
         # Organisms
         if (spacy_label in ['ORGANISM', 'SPECIES'] or 
-            any(word in text_lower for word in ['mouse', 'rat', 'human', 'plant', 'yeast', 'bacteria', 'cell'])):
+            any(word in text_lower for word in ['mouse', 'rat', 'human', 'plant', 'yeast', 'bacteria', 'cell', 'mice', 'laboratories'])):
             return 'organism'
         
         # Tissues/Systems
@@ -134,12 +138,16 @@ class Command(BaseCommand):
         
         # Assays/Methods
         elif (spacy_label in ['CHEMICAL', 'DRUG'] or 
-              any(word in text_lower for word in ['pcr', 'rna-seq', 'proteomics', 'histology', 'assay', 'analysis'])):
+              any(word in text_lower for word in ['pcr', 'rna-seq', 'proteomics', 'histology', 'assay', 'analysis', 'qpcr', 'elisa', 'sequencing'])):
             return 'assay'
         
         # Outcomes
         elif (any(word in text_lower for word in ['increase', 'decrease', 'change', 'effect', 'response', 'adaptation'])):
             return 'outcome'
+        
+        # Be more permissive - accept more entities
+        elif len(text.strip()) > 2 and not text.isdigit():
+            return 'organism'  # Default to organism for biological terms
         
         else:
             return 'other'

@@ -184,13 +184,10 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                     queryset = queryset.filter(
                         Q(title__icontains=year)
                         | Q(abstract__icontains=year)
-                        | Q(sections__content__icontains=year)
                         | Q(title__icontains=f"({year})")
                         | Q(title__icontains=f", {year}")
                         | Q(abstract__icontains=f"({year})")
                         | Q(abstract__icontains=f", {year}")
-                        | Q(sections__content__icontains=f"({year})")
-                        | Q(sections__content__icontains=f", {year}")
                     )
             else:
                 queryset = queryset.filter(
@@ -501,7 +498,6 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             Study.objects.filter(
                 Q(title__icontains="human")
                 | Q(abstract__icontains="human")
-                | Q(sections__content__icontains="human")
             )
             .exclude(
                 Q(title__icontains="mouse")
@@ -518,7 +514,6 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
             Study.objects.filter(
                 Q(title__icontains="mouse")
                 | Q(abstract__icontains="mouse")
-                | Q(sections__content__icontains="mouse")
             )
             .distinct()
             .count()
@@ -532,7 +527,6 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 Study.objects.filter(
                     Q(title__icontains=organism.lower())
                     | Q(abstract__icontains=organism.lower())
-                    | Q(sections__content__icontains=organism.lower())
                 )
                 .distinct()
                 .count()
@@ -555,7 +549,6 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 Study.objects.filter(
                     Q(title__icontains=exposure.lower())
                     | Q(abstract__icontains=exposure.lower())
-                    | Q(sections__content__icontains=exposure.lower())
                 )
                 .distinct()
                 .count()
@@ -579,7 +572,6 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 Study.objects.filter(
                     Q(title__icontains=system.lower())
                     | Q(abstract__icontains=system.lower())
-                    | Q(sections__content__icontains=system.lower())
                 )
                 .distinct()
                 .count()
@@ -602,7 +594,6 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                     Study.objects.filter(
                         Q(title__icontains="human")
                         | Q(abstract__icontains="human")
-                        | Q(sections__content__icontains="human")
                     )
                     .exclude(
                         Q(title__icontains="mouse")
@@ -617,7 +608,6 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                     Study.objects.filter(
                         Q(title__icontains=organism.lower())
                         | Q(abstract__icontains=organism.lower())
-                        | Q(sections__content__icontains=organism.lower())
                     )
                     .distinct()
                     .count()
@@ -641,7 +631,6 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 Study.objects.filter(
                     Q(title__icontains=term.lower())
                     | Q(abstract__icontains=term.lower())
-                    | Q(sections__content__icontains=term.lower())
                 )
                 .distinct()
                 .count()
@@ -663,13 +652,10 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                     Study.objects.filter(
                         Q(title__icontains=year)
                         | Q(abstract__icontains=year)
-                        | Q(sections__content__icontains=year)
                         | Q(title__icontains=f"({year})")
                         | Q(title__icontains=f", {year}")
                         | Q(abstract__icontains=f"({year})")
                         | Q(abstract__icontains=f", {year}")
-                        | Q(sections__content__icontains=f"({year})")
-                        | Q(sections__content__icontains=f", {year}")
                     )
                     .distinct()
                     .count()
@@ -694,7 +680,6 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 Study.objects.filter(
                     Q(title__icontains=journal)
                     | Q(abstract__icontains=journal)
-                    | Q(sections__content__icontains=journal)
                 )
                 .distinct()
                 .count()
@@ -717,7 +702,6 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 Study.objects.filter(
                     Q(title__icontains=assay)
                     | Q(abstract__icontains=assay)
-                    | Q(sections__content__icontains=assay)
                 )
                 .distinct()
                 .count()
@@ -741,7 +725,6 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
                 Study.objects.filter(
                     Q(title__icontains=mission)
                     | Q(abstract__icontains=mission)
-                    | Q(sections__content__icontains=mission)
                 )
                 .distinct()
                 .count()

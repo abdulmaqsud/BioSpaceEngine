@@ -66,40 +66,37 @@ export default function FacetFilters({
       title: 'Year',
       key: 'year',
       selected: selectedYear,
-      options: facets?.years?.slice(0, 10) || [
-        { name: '2023', count: 45 },
-        { name: '2022', count: 38 },
-        { name: '2021', count: 42 },
-        { name: '2020', count: 35 },
-        { name: '2019', count: 28 }
-      ]
+      options: facets?.years?.slice(0, 10) || []
     },
     {
       title: 'Assay',
       key: 'assay',
       selected: selectedAssay,
-      options: facets?.assays || [
-        { name: 'Microscopy', count: 156 },
-        { name: 'PCR', count: 89 },
-        { name: 'Western Blot', count: 67 },
-        { name: 'Flow Cytometry', count: 45 },
-        { name: 'ELISA', count: 34 },
-        { name: 'Other', count: 89 }
-      ]
+      options: facets?.assays || []
     },
     {
       title: 'Mission',
       key: 'mission',
       selected: selectedMission,
-      options: facets?.missions || [
-        { name: 'ISS', count: 234 },
-        { name: 'Space Shuttle', count: 89 },
-        { name: 'Ground Control', count: 156 },
-        { name: 'Parabolic Flight', count: 45 },
-        { name: 'Other', count: 48 }
-      ]
+      options: facets?.missions || []
     }
   ];
+
+  if (!facets) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-cyan-500/15 bg-slate-950/70 shadow-[0_0_38px_rgba(14,58,130,0.32)]">
+        <div className="flex items-center justify-between border-b border-white/5 bg-slate-900/60 px-6 py-5">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-cyan-100">Mission Filters</h3>
+            <p className="mt-1 text-xs text-slate-300/80">Fine-tune your orbit by organism, exposure, mission profile, and more.</p>
+          </div>
+        </div>
+        <div className="p-6 text-center text-slate-400">
+          Loading filters...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-2xl border border-cyan-500/15 bg-slate-950/70 shadow-[0_0_38px_rgba(14,58,130,0.32)]">
